@@ -14,13 +14,21 @@ const MAX_RECENT = 6
 const getStorageKey = (roleId?: string) =>
   `${RECENT_MENU_KEY}:${roleId || 'unknown'}`
 
-export const getRecentMenuOptions = (roleId?: string): RecentMenuItem[] => {
+const isHomeOption = (option: Pick<MenuOption, 'MENU_OPTION_ID' | 'NAME'>) =>
+  option.MENU_OPTION_ID === '0-0' && option.NAME === 'Inicio'
+
+export const getRecentMenuOptions = (
+  roleId?: string,
+  max?: number
+): RecentMenuItem[] => {
   const key = getStorageKey(roleId)
   try {
     const raw = localStorage.getItem(key)
     if (!raw) return []
     const parsed = JSON.parse(raw) as RecentMenuItem[]
-    return Array.isArray(parsed) ? parsed : []
+    const _arrParsed = Array.isArray(parsed) ? parsed : []
+
+    return isNaN(max) ? parsed : _arrParsed.slice(0, max)
   } catch {
     return []
   }
@@ -28,9 +36,12 @@ export const getRecentMenuOptions = (roleId?: string): RecentMenuItem[] => {
 
 export const addRecentMenuOption = (option: MenuOption) => {
   if (!option?.MENU_OPTION_ID || !option?.PATH) return
+  if (isHomeOption(option)) return
 
   const { roleId } = getSessionInfo()
-  const existing = getRecentMenuOptions(String(roleId))
+  const existing = getRecentMenuOptions(String(roleId)).filter(
+    (item) => !isHomeOption(item)
+  )
   const filtered = existing.filter(
     (item) => item.MENU_OPTION_ID !== option.MENU_OPTION_ID
   )

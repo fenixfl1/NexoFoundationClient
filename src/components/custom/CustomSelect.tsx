@@ -40,7 +40,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
             .includes(input.toLowerCase())
         )
       }
-      style={{ ...props.style, width }}
+      style={{ ...props.style, width, minWidth: width }}
       {...props}
     >
       {props.children}

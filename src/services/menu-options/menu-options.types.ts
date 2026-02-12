@@ -8,13 +8,15 @@ export interface MenuOption {
   PARENT_ID?: string
   PATH: string
   TYPE?: 'submenu' | 'item' | 'group' | 'divider'
-}
-
-export interface OptionWithPermission extends Omit<MenuOption, 'ICON'> {
-  PERMISSIONS: {
+  ORDER?: number
+  STATE?: string
+  CREATED_AT?: string
+  PERMISSIONS?: {
     PERMISSION_ID: number
     DESCRIPTION: string
     ACTION_ID: number
     ACTION_NAME: string
   }[]
 }
+
+export type OptionWithPermission = MenuOption

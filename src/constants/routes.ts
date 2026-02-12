@@ -22,6 +22,7 @@ export const API_PATH_GET_TAG_LIST = '/get_tags/'
 export const API_PATH_CHECKOUT = '/checkout'
 export const API_PATH_LOGIN = '/login'
 export const API_PATH_GET_USER_MENU_OPTION = '/menu_options/'
+export const API_PATH_CREATE_UPDATE_MENU_OPTION = '/menu_options'
 export const API_GET_STAFF_PAGINATION = '/staff/pagination'
 export const API_PATH_CREATE_UPDATE_STAFF = '/staff'
 export const API_PATH_GET_USER_PAGINATION = '/user/pagination'
@@ -97,3 +98,17 @@ export const API_PATH_CREATE_UPDATE_STUDENT_REQUIREMENT =
 export const API_PATH_GET_STUDENT_REQUIREMENT_PAGINATION =
   '/student_requirements/pagination'
 export const API_PATH_GET_STUDENT_REQUIREMENT = '/student_requirements'
+
+// Calificaciones / Índice académico
+export const API_PATH_CREATE_UPDATE_TERM = '/grades/terms'
+export const API_PATH_GET_TERM_PAGINATION = '/grades/terms/pagination'
+export const API_PATH_GET_TERM = '/grades/terms'
+export const API_PATH_GET_TERM_BY_STUDENT = '/grades/terms/student'
+
+// Actividades / voluntariado
+export const API_PATH_CREATE_UPDATE_ACTIVITY = '/activities'
+export const API_PATH_GET_ACTIVITY = '/activities'
+export const API_PATH_GET_ACTIVITY_PAGINATION = '/activities/pagination'
+export const API_PATH_ACTIVITY_ENROLL = '/activities/enroll'
+export const API_PATH_ACTIVITY_PARTICIPANT_UPDATE =
+  '/activities/participants/status'

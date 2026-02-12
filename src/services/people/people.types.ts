@@ -7,8 +7,10 @@ export interface Person {
   LAST_NAME: string
   GENDER: string
   BIRTH_DATE: string
+  DOCUMENT_TYPE?: string | null
   IDENTITY_DOCUMENT: string
   STATE: string
+  STUDENT_ID?: number
   CREATED_AT: string
   CREATED_BY: number
   PHONE?: string
@@ -46,4 +48,17 @@ export interface PersonPayload {
   CONTACTS: Contact[]
   REFERENCES: Reference[]
   STUDENT?: Student
+  INCOMPLETE?: boolean
+  PERSON_TYPE?: string
+  DOCUMENT_TYPE?: string
+  DOCUMENTS?: {
+    DOCUMENT_TYPE: string
+    FILE_NAME: string
+    MIME_TYPE: string
+    FILE_BASE64: string
+    SIGNED_BASE64?: string | null
+    SIGNED_AT?: string | null
+    DESCRIPTION?: string | null
+    STATE?: string
+  }[]
 }

@@ -26,19 +26,23 @@ import { AdvancedCondition } from 'src/types/general'
 import { useGetStudentPaginationMutation } from 'src/services/students/useGetStudentPaginationMutation'
 import { useStudentStore } from 'src/store/students.store'
 import { useCreateRequestMutation } from 'src/services/requests/useCreateRequestMutation'
+import { useUpdateRequestMutation } from 'src/services/requests/useUpdateRequestMutation'
 import { useAppNotification } from 'src/context/NotificationContext'
 import {
   CreateRequestPayload,
   RequestStatus,
+  RequestItem,
 } from 'src/services/requests/request.types'
 import { useErrorHandler } from 'src/hooks/use-error-handler'
 import dayjs from 'dayjs'
 import ConditionalComponent from 'src/components/ConditionalComponent'
+import { getSessionInfo } from 'src/lib/session'
 
 interface RequestFormProps {
   onCancel?: () => void
   open: boolean
   onSuccess?: () => void
+  request?: RequestItem
 }
 
 const requestStatusLabels: Record<RequestStatus, string> = {
@@ -57,6 +61,7 @@ const RequestForm: React.FC<RequestFormProps> = ({
   onCancel,
   onSuccess,
   open,
+  request,
 }) => {
   const [form] = Form.useForm<RequestFormValues>()
 
@@ -77,6 +82,10 @@ const RequestForm: React.FC<RequestFormProps> = ({
     useGetStudentPaginationMutation()
   const { mutateAsync: createRequest, isPending: isCreateRequestPending } =
     useCreateRequestMutation()
+  const { mutateAsync: updateRequest, isPending: isUpdateRequestPending } =
+    useUpdateRequestMutation()
+
+  const isStudent = Number(getSessionInfo().roleId) === 3
 
   const statusOptions = useMemo(
     () =>
@@ -128,6 +137,14 @@ const RequestForm: React.FC<RequestFormProps> = ({
       })
     }
 
+    if (isStudent) {
+      condition.push({
+        value: getSessionInfo().personId,
+        field: 'PERSON_ID',
+        operator: '=',
+      })
+    }
+
     getStudents({ page: 1, size: 20, condition })
   }, [debounceStudent, getStudents])
 
@@ -163,12 +180,19 @@ const RequestForm: React.FC<RequestFormProps> = ({
           : null,
       }
 
-      await createRequest(payload)
-
-      notification({
-        message: 'Solicitud registrada',
-        description: 'La solicitud se registró correctamente.',
-      })
+      if (request?.REQUEST_ID) {
+        await updateRequest({ ...payload, REQUEST_ID: request.REQUEST_ID })
+        notification({
+          message: 'Solicitud actualizada',
+          description: 'La solicitud se actualizó correctamente.',
+        })
+      } else {
+        await createRequest(payload)
+        notification({
+          message: 'Solicitud registrada',
+          description: 'La solicitud se registró correctamente.',
+        })
+      }
 
       form.resetFields()
       setPersonSearch('')
@@ -194,6 +218,16 @@ const RequestForm: React.FC<RequestFormProps> = ({
       setStudentSearch('')
     }
   }, [open, form])
+
+  useEffect(() => {
+    if (!open || !request) return
+    form.setFieldsValue({
+      ...request,
+      NEXT_APPOINTMENT: request.NEXT_APPOINTMENT
+        ? dayjs(request.NEXT_APPOINTMENT)
+        : null,
+    })
+  }, [open, request])
 
   const personOptions = useMemo(
     () =>
@@ -221,12 +255,16 @@ const RequestForm: React.FC<RequestFormProps> = ({
       open={open}
       width={'50%'}
       onOk={handleSubmit}
-      okText={'Guardar solicitud'}
-      okButtonProps={{ loading: isCreateRequestPending }}
+      okText={request ? 'Actualizar solicitud' : 'Guardar solicitud'}
+      okButtonProps={{
+        loading: isCreateRequestPending || isUpdateRequestPending,
+      }}
     >
-      <CustomSpin spinning={isCreateRequestPending}>
+      <CustomSpin spinning={isCreateRequestPending || isUpdateRequestPending}>
         <CustomDivider>
-          <CustomTitle level={5}>Nueva Solicitud</CustomTitle>
+          <CustomTitle level={5}>
+            {request ? 'Editar solicitud' : 'Nueva Solicitud'}
+          </CustomTitle>
         </CustomDivider>
         <CustomForm
           form={form}
@@ -239,8 +277,10 @@ const RequestForm: React.FC<RequestFormProps> = ({
                 label={'Solicitante'}
                 name={'PERSON_ID'}
                 rules={[{ required: true }]}
+                initialValue={getSessionInfo()?.personId}
               >
                 <CustomSelect
+                  disabled={isStudent}
                   placeholder={'Seleccionar persona'}
                   options={personOptions}
                   loading={isGetPeoplePending}

@@ -81,13 +81,7 @@ const Page: React.FC = () => {
 
   return (
     <CustomCard>
-      <CustomCalendar
-        cellRender={cellRender}
-        onSelect={(date) => {
-          // eslint-disable-next-line no-console
-          console.log({ date })
-        }}
-      />
+      <CustomCalendar cellRender={cellRender} />
     </CustomCard>
   )
 }

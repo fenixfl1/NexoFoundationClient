@@ -16,6 +16,7 @@ export interface StudentDocument {
   IDENTITY_DOCUMENT?: string
   UNIVERSITY?: string
   CAREER?: string
+  GROUP_KEY?: string
 }
 
 export type StudentDocumentPayload = Omit<

@@ -36,10 +36,10 @@ const Result = styled(CustomResult)`
 `
 
 const Container = styled(CustomRow)`
-  background-color: ${({ theme: { isDark } }) =>
-    isDark ? '#000000' : undefined};
-  height: 100vh;
-  overflow: auto;
+  background-color: transparent;
+  min-height: calc(100vh - 150px);
+  padding: 24px 0;
+  overflow: visible;
 `
 
 export type ErrorStatusCode = '403' | '404' | '500'

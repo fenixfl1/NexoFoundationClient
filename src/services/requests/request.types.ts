@@ -39,3 +39,7 @@ export type CreateRequestPayload = Omit<
   RequestRecord,
   'REQUEST_ID' | 'CREATED_AT' | 'UPDATED_AT'
 >
+
+export type UpdateRequestPayload = Partial<CreateRequestPayload> & {
+  REQUEST_ID: number
+}

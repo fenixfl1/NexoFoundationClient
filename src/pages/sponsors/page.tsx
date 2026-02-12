@@ -20,6 +20,7 @@ import useDebounce from 'src/hooks/use-debounce'
 import { AdvancedCondition } from 'src/types/general'
 import { getConditionFromForm } from 'src/utils/get-condition-from'
 import { CustomText } from 'src/components/custom/CustomParagraph'
+import formatter from 'src/utils/formatter'
 
 const sponsorInitialFilter = {
   FILTER: {
@@ -28,11 +29,11 @@ const sponsorInitialFilter = {
 }
 
 const sponsorTypeOptions = [
-  { label: 'Empresa', value: 'company' },
-  { label: 'Persona', value: 'person' },
-  { label: 'Fundación', value: 'foundation' },
-  { label: 'ONG', value: 'ngo' },
-  { label: 'Otro', value: 'other' },
+  { label: 'Empresa', value: 'E' },
+  { label: 'Persona', value: 'P' },
+  { label: 'Fundación', value: 'F' },
+  { label: 'ONG', value: 'N' },
+  { label: 'Otro', value: 'O' },
 ]
 
 const SponsorsPage: React.FC = () => {
@@ -43,8 +44,7 @@ const SponsorsPage: React.FC = () => {
   const [errorHandler] = useErrorHandler()
 
   const { sponsors, metadata } = useSponsorStore()
-  const { mutate: getSponsors, isPending } =
-    useGetSponsorPaginationMutation()
+  const { mutate: getSponsors, isPending } = useGetSponsorPaginationMutation()
   const { mutateAsync: updateSponsor, isPending: isUpdatePending } =
     useUpdateSponsorMutation()
 
@@ -108,22 +108,24 @@ const SponsorsPage: React.FC = () => {
               {record.PERSON_LAST_NAME ?? ''}
             </CustomText>
             <CustomText type="secondary">
-              {record.PERSON_IDENTITY_DOCUMENT ?? record.TAX_ID ?? '—'}
+              {formatter({
+                value: record.PERSON_IDENTITY_DOCUMENT,
+                format: 'document',
+              }) ??
+                record.TAX_ID ??
+                '—'}
             </CustomText>
           </CustomSpace>
         ),
       },
       {
+        width: '7%',
         dataIndex: 'TYPE',
         key: 'TYPE',
         title: 'Tipo',
         render: (value: string) => {
-          const option = sponsorTypeOptions.find(
-            (item) => item.value === value
-          )
-          return (
-            <CustomTag color="blue">{option?.label ?? value}</CustomTag>
-          )
+          const option = sponsorTypeOptions.find((item) => item.value === value)
+          return <CustomTag color="blue">{option?.label ?? value}</CustomTag>
         },
       },
     ],

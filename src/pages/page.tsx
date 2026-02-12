@@ -19,6 +19,8 @@ import { useMenuOptionStore } from 'src/store/menu-options.store'
 import { getRecentMenuOptions } from 'src/utils/recent-menu'
 import { useGetDashboardActivityQuery } from 'src/services/dashboard/useGetDashboardActivityQuery'
 import formatter from 'src/utils/formatter'
+import CustomRow from 'src/components/custom/CustomRow'
+import CustomCol from 'src/components/custom/CustomCol'
 
 const fadeUp = keyframes`
   from {
@@ -253,6 +255,32 @@ const SmallMuted = styled.div`
   color: var(--text-soft);
 `
 
+const getLastAccessLabel = (touchedAt?: string) => {
+  if (!touchedAt) return 'Último acceso reciente'
+  const time = new Date(touchedAt)
+  const diffMs = Date.now() - time.getTime()
+  if (Number.isNaN(time.getTime()) || diffMs < 0) return 'Último acceso reciente'
+
+  const minutes = Math.floor(diffMs / 60000)
+  if (minutes < 1) return 'Último acceso hace segundos'
+  if (minutes < 60)
+    return `Último acceso hace ${minutes} minuto${minutes === 1 ? '' : 's'}`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24)
+    return `Último acceso hace ${hours} hora${hours === 1 ? '' : 's'}`
+
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `Último acceso hace ${days} día${days === 1 ? '' : 's'}`
+
+  const months = Math.floor(days / 30)
+  if (months < 12)
+    return `Último acceso hace ${months} mes${months === 1 ? '' : 'es'}`
+
+  const years = Math.floor(months / 12)
+  return `Último acceso hace ${years} año${years === 1 ? '' : 's'}`
+}
+
 const Feed = styled.div`
   display: grid;
   gap: 12px;
@@ -305,7 +333,7 @@ const Home: React.FC = () => {
   }, [menuOptions])
 
   const recentOptions = useMemo(
-    () => getRecentMenuOptions(String(roleId)),
+    () => getRecentMenuOptions(String(roleId), 5),
     [roleId]
   )
 
@@ -465,20 +493,18 @@ const Home: React.FC = () => {
 
         <Panel>
           <PanelHeader>
-            <CustomText
-              style={{
-                // no breaking spaces
-                whiteSpace: 'nowrap',
-              }}
-              strong
-            >
-              Accesos rápidos
-            </CustomText>
-            <CustomSegmented
-              options={['Recientes', 'Pendientes']}
-              value={quickTab}
-              onChange={setQuickTab}
-            />
+            <CustomRow justify={'end'}>
+              <CustomCol xs={24}>
+                <CustomText style={{ whiteSpace: 'nowrap' }} strong>
+                  Accesos rápidos
+                </CustomText>
+              </CustomCol>
+              <CustomSegmented
+                options={['Recientes', 'Pendientes']}
+                value={quickTab}
+                onChange={setQuickTab}
+              />
+            </CustomRow>
           </PanelHeader>
           <QuickList>
             {quickTab === 'Recientes' &&
@@ -490,7 +516,7 @@ const Home: React.FC = () => {
                     role="button"
                   >
                     <span>{option.NAME}</span>
-                    <SmallMuted>Último acceso reciente</SmallMuted>
+                    <SmallMuted>{getLastAccessLabel(option.touchedAt)}</SmallMuted>
                   </QuickItem>
                 ))
               ) : (

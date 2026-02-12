@@ -12,7 +12,11 @@ import CustomRow from 'src/components/custom/CustomRow'
 import CustomCol from 'src/components/custom/CustomCol'
 import CustomDivider from 'src/components/custom/CustomDivider'
 import CustomSpin from 'src/components/custom/CustomSpin'
-import { formItemLayout, defaultBreakpoints } from 'src/config/breakpoints'
+import {
+  formItemLayout,
+  defaultBreakpoints,
+  labelColFullWidth,
+} from 'src/config/breakpoints'
 import { Pledge } from 'src/services/pledges/pledge.types'
 import { useCreatePledgeMutation } from 'src/services/pledges/useCreatePledgeMutation'
 import { useUpdatePledgeMutation } from 'src/services/pledges/useUpdatePledgeMutation'
@@ -146,7 +150,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({
       >
         <CustomDivider />
         <CustomForm form={form} {...formItemLayout}>
-          <CustomRow gutter={[16, 8]}>
+          <CustomRow>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
                 label={'Patrocinador'}
@@ -173,7 +177,11 @@ const PledgeForm: React.FC<PledgeFormProps> = ({
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
-              <CustomFormItem label={'Descripción'} name={'DESCRIPTION'}>
+              <CustomFormItem
+                label={'Descripción'}
+                name={'DESCRIPTION'}
+                {...labelColFullWidth}
+              >
                 <CustomTextArea rows={2} placeholder={'Descripción'} />
               </CustomFormItem>
             </CustomCol>
@@ -185,6 +193,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({
               >
                 <CustomInputNumber
                   min={0}
+                  format={{ format: 'currency', currency: 'RD' }}
                   placeholder={'Monto'}
                   style={{ width: '100%' }}
                 />
@@ -212,13 +221,16 @@ const PledgeForm: React.FC<PledgeFormProps> = ({
                 />
               </CustomFormItem>
             </CustomCol>
-            <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Estado'} name={'STATUS'}>
-                <CustomSelect options={pledgeStatusOptions} />
-              </CustomFormItem>
-            </CustomCol>
+
+            <CustomFormItem hidden label={'Estado'} name={'STATUS'}>
+              <CustomSelect options={pledgeStatusOptions} />
+            </CustomFormItem>
             <CustomCol xs={24}>
-              <CustomFormItem label={'Notas'} name={'NOTES'}>
+              <CustomFormItem
+                label={'Notas'}
+                name={'NOTES'}
+                {...labelColFullWidth}
+              >
                 <CustomTextArea rows={2} placeholder={'Notas'} />
               </CustomFormItem>
             </CustomCol>

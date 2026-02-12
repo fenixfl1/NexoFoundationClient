@@ -65,3 +65,7 @@
 /* .custom-btn-clear {
   cursor: pointer;
 } */
+
+.ant-table-row-expand-icon {
+  color: #ffffff !important;
+}

@@ -34,15 +34,28 @@ import { useUpdatePersonMutation } from 'src/services/people/useUpdatePersonMuta
 import { useCustomNotifications } from 'src/hooks/use-custom-notification'
 import { useGeneralStore } from 'src/store/general.store'
 import { useUpdateStudentMutation } from 'src/services/students/useCreateStudentMutation'
+import RequiredDocuments, { DocPayload } from '../components/RequiredDocuments'
+import { Requirement } from 'src/services/requirements/requirement.types'
 
 enum StepKeys {
   PERSONAL = 'personal_data',
   CONTACTS = 'contacts',
   STUDENT = 'student_data',
+  DOCUMENTS = 'documents',
   REFERENCES = 'references',
 }
 
 const STUDENT_ROLE_ID = 3
+
+const hiddenFields = [
+  'NAME',
+  'LAST_NAME',
+  'GENDER',
+  'BIRTH_DATE',
+  'IDENTITY_DOCUMENT',
+  'DOCUMENT_TYPE',
+  'PERSON_TYPE',
+]
 
 const Page: React.FC = () => {
   const [errorHandler] = useErrorHandler()
@@ -68,6 +81,9 @@ const Page: React.FC = () => {
   const { person, reset } = usePeopleStore()
   const { setTitle } = useGeneralStore()
 
+  const [docsMap, setDocsMap] = useState<Record<number, DocPayload>>({})
+  const [requiredList, setRequiredList] = useState<Requirement[]>([])
+
   const isEditing = action === 'edit'
 
   useEffect(() => {
@@ -77,17 +93,46 @@ const Page: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    form.setFieldsValue({
+      NAME: 'Grupo JR SRL',
+      BIRTH_DATE: dayjs('2025-12-09T04:00:00.000Z'),
+      IDENTITY_DOCUMENT: '5-66-56565-6',
+      ROLE_ID: 2,
+      CONTACTS: [
+        {
+          IS_PRIMARY: true,
+          TYPE: 'email',
+          VALUE: 'grupojrsrl@info.com',
+          USAGE: 'personal',
+        },
+        {
+          IS_PRIMARY: true,
+          TYPE: 'phone',
+          VALUE: '(829) 556-9696',
+          USAGE: 'personal',
+        },
+      ],
+      REFERENCES: [],
+      INCOMPLETE: false,
+      DOCUMENTS: [],
+    } as never)
+  }, [])
+
+  useEffect(() => {
     if (isEditing) {
-      const contacts = person.CONTACTS?.reduce((acc, contact) => {
-        const type = contact.TYPE
+      const contacts = person.CONTACTS?.reduce(
+        (acc, contact) => {
+          const type = contact.TYPE
 
-        if (!acc[type]) {
-          acc[type] = []
-        }
+          if (!acc[type]) {
+            acc[type] = []
+          }
 
-        acc[type].push(contact)
-        return acc
-      }, {} as Record<ContactType, Contact[]>)
+          acc[type].push(contact)
+          return acc
+        },
+        {} as Record<ContactType, Contact[]>
+      )
 
       form.setFieldsValue({
         ...person,
@@ -137,6 +182,18 @@ const Page: React.FC = () => {
             title: 'Datos del estudiante',
             content: <StudentData form={form} />,
           },
+          {
+            key: StepKeys.DOCUMENTS,
+            title: 'Documentos requeridos',
+            content: (
+              <RequiredDocuments
+                onChange={(docs, req) => {
+                  setDocsMap(docs)
+                  setRequiredList(req)
+                }}
+              />
+            ),
+          },
         ]
       : []),
     {
@@ -148,18 +205,44 @@ const Page: React.FC = () => {
 
   const handleCreatePerson = async () => {
     try {
+      const values = await form.validateFields()
+
+      // eslint-disable-next-line no-console
+      console.log({ formState, values })
+
       if (!formState) {
         throw new Error('Datos incompletos en el formulario.')
       }
 
+      const missingRequired = requiredList.some(
+        (req) => req.IS_REQUIRED && !docsMap[req.REQUIREMENT_ID]
+      )
+
       const payload: PersonPayload = {
         ...formState,
+        ...values,
         CONTACTS: formState.CONTACTS ?? [],
         REFERENCES: formState.REFERENCES ?? [],
         STUDENT:
           Number(formState.ROLE_ID) === STUDENT_ROLE_ID
             ? formState.STUDENT
             : undefined,
+        INCOMPLETE: missingRequired,
+        DOCUMENTS: Object.values(docsMap ?? {}).map((doc) => {
+          const requirement = requiredList.find(
+            (r) => r.REQUIREMENT_ID === doc.REQUIREMENT_ID
+          )
+          return {
+            DOCUMENT_TYPE: requirement?.NAME || `REQ-${doc.REQUIREMENT_ID}`,
+            DESCRIPTION: requirement?.DESCRIPTION,
+            FILE_BASE64: doc.FILE_BASE64,
+            FILE_NAME: doc.FILE_NAME,
+            MIME_TYPE: doc.MIME_TYPE,
+            SIGNED_BASE64: doc.SIGNED_BASE64,
+            SIGNED_AT: doc.SIGNED_AT,
+            STATE: 'A',
+          }
+        }),
       }
 
       await createPerson(payload)
@@ -189,7 +272,7 @@ const Page: React.FC = () => {
       const { message, data } = await updatePerson(values)
 
       successNotification({ message })
-      setFormState((prev) => ({ ...(prev ?? {}), ...data } as never))
+      setFormState((prev) => ({ ...(prev ?? {}), ...data }) as never)
     } catch (error) {
       errorHandler(error)
     }
@@ -209,6 +292,8 @@ const Page: React.FC = () => {
       const values = await form.validateFields()
 
       const basePersonData: Partial<PersonPayload> = {
+        PERSON_TYPE: values.PERSON_TYPE,
+        DOCUMENT_TYPE: values.DOCUMENT_TYPE,
         NAME: values.NAME,
         LAST_NAME: values.LAST_NAME,
         GENDER: values.GENDER,
@@ -225,7 +310,7 @@ const Page: React.FC = () => {
             await handleUpdatePerson()
           } else {
             setFormState(
-              (prev) => ({ ...(prev ?? {}), ...basePersonData } as never)
+              (prev) => ({ ...(prev ?? {}), ...basePersonData }) as never
             )
           }
 
@@ -241,7 +326,7 @@ const Page: React.FC = () => {
                   ...(values[ContactType.EMAIL] ?? []),
                   ...(values[ContactType.PHONE] ?? []),
                 ],
-              } as never)
+              }) as never
           )
           break
         }
@@ -255,7 +340,22 @@ const Page: React.FC = () => {
                 ...(prev ?? {}),
                 ...basePersonData,
                 STUDENT: values.STUDENT,
-              } as never)
+              }) as never
+          )
+          break
+        }
+        case StepKeys.DOCUMENTS: {
+          const missingRequired = requiredList.some(
+            (req) => req.IS_REQUIRED && !docsMap[req.REQUIREMENT_ID]
+          )
+
+          setFormState(
+            (prev) =>
+              ({
+                ...(prev ?? {}),
+                ...basePersonData,
+                INCOMPLETE: missingRequired,
+              }) as never
           )
           break
         }
@@ -312,6 +412,9 @@ const Page: React.FC = () => {
         <CustomCol xs={24}>
           <CustomSteps onChange={setCurrent} current={current} items={steps} />
           <CustomForm form={form} {...formItemLayout}>
+            {hiddenFields.map((field) => (
+              <CustomFormItem hidden name={field} />
+            ))}
             <CustomFormItem hidden name={'ROLE_ID'} />
             <div style={{ width: '100%', margin: '45px 0' }} />
             <CustomSpace size={'large'}>
@@ -351,8 +454,8 @@ const Page: React.FC = () => {
                     {current === steps.length - 1
                       ? 'Finalizar'
                       : isEditing
-                      ? 'Actualizar y Continuar'
-                      : 'Continuar'}
+                        ? 'Actualizar y Continuar'
+                        : 'Continuar'}
                   </CustomButton>
                 </CustomRow>
               </CustomCol>

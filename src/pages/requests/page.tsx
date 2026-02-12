@@ -10,7 +10,7 @@ import { ColumnsType } from 'antd/lib/table'
 import { RequestItem } from 'src/services/requests/request.types'
 import { useRequestStore } from 'src/store/requests.store'
 import { CustomText, CustomTitle } from 'src/components/custom/CustomParagraph'
-import { EyeOutlined } from '@ant-design/icons'
+import { EyeOutlined, EditOutlined } from '@ant-design/icons'
 import RequestDetail from './components/RequestDetail'
 import formatter from 'src/utils/formatter'
 import { useGetRequestPaginationMutation } from 'src/services/requests/useGetRequestPaginationMutation'
@@ -24,6 +24,7 @@ import ConditionalComponent from 'src/components/ConditionalComponent'
 
 const RequestsPage: React.FC = () => {
   const [modalState, setModalState] = useState<boolean>()
+  const [editing, setEditing] = useState<RequestItem>()
   const [searchKey, setSearchKey] = useState('')
   const debounce = useDebounce(searchKey)
   const {
@@ -162,13 +163,25 @@ const RequestsPage: React.FC = () => {
       title: 'Acciones',
       align: 'center',
       render: (_, record) => (
-        <CustomTooltip title="Ver detalle">
-          <CustomButton
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => openDrawer(record)}
-          />
-        </CustomTooltip>
+        <CustomSpace direction={'horizontal'}>
+          <CustomTooltip title="Ver detalle">
+            <CustomButton
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => openDrawer(record)}
+            />
+          </CustomTooltip>
+          <CustomTooltip title="Editar solicitud">
+            <CustomButton
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditing(record)
+                setModalState(true)
+              }}
+            />
+          </CustomTooltip>
+        </CustomSpace>
       ),
     },
   ]
@@ -194,7 +207,10 @@ const RequestsPage: React.FC = () => {
           metadata={metadata}
           createText={'Nueva solicitud'}
           showActions={false}
-          onCreate={toggleModalState}
+          onCreate={() => {
+            setEditing(undefined)
+            toggleModalState()
+          }}
           onEdit={() => null}
           onUpdate={() => null}
           onSearch={setSearchKey}
@@ -214,7 +230,11 @@ const RequestsPage: React.FC = () => {
       <ConditionalComponent condition={modalState}>
         <RequestForm
           open={modalState}
-          onCancel={toggleModalState}
+          request={editing}
+          onCancel={() => {
+            setEditing(undefined)
+            toggleModalState()
+          }}
           onSuccess={loadRequests}
         />
       </ConditionalComponent>

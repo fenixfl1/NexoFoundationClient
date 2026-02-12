@@ -88,17 +88,20 @@ const CustomMaskedInput: React.FC<CustomMaskedInputProps> = ({
   const normalizedName = Array.isArray(name) ? name.join('_') : name ?? 'input'
   const inputId = props.id ?? `${formName}_${normalizedName}`
 
+  // Asegura que siempre haya reglas de máscara válidas
+  const maskRule = rules[type as never] ?? rules.document
+
   useMaskInput({
     id: inputId,
     args: {
-      mask: rules[type as never],
+      mask: maskRule,
       dispatch: (append, dynamicMasked) => {
         let value = ''
         const guide = type === ('document' as never) ? variante : type
         const mask =
           dynamicMasked.compiledMasks.find(
             (item) => item?.['type'] === guide
-          ) ?? dynamicMasked.compiledMasks[0]
+          ) ?? dynamicMasked.compiledMasks?.[0]
 
         if (variante !== 'passport' && variante !== 'cedula_rnc') {
           value = (dynamicMasked.value + append).replace(/\D/g, '')
@@ -114,7 +117,7 @@ const CustomMaskedInput: React.FC<CustomMaskedInputProps> = ({
         if (typeof nextValue !== 'undefined') {
           form?.setFieldValue?.(name as never, nextValue)
         }
-        return mask as never
+        return (mask ?? dynamicMasked.compiledMasks?.[0]) as never
       },
     },
   })

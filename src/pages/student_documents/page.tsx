@@ -1,7 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Form } from 'antd'
-import { DownloadOutlined, FileDoneOutlined } from '@ant-design/icons'
+import {
+  DownloadOutlined,
+  FileDoneOutlined,
+  EditOutlined,
+  PlusOutlined,
+  MinusOutlined,
+} from '@ant-design/icons'
 import SmartTable from 'src/components/SmartTable'
+import CustomTable from 'src/components/custom/CustomTable'
 import CustomRow from 'src/components/custom/CustomRow'
 import CustomCol from 'src/components/custom/CustomCol'
 import CustomFormItem from 'src/components/custom/CustomFormItem'
@@ -46,6 +53,7 @@ const Page: React.FC = () => {
   const [form] = Form.useForm()
   const [searchKey, setSearchKey] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [expandedRowKeys, setExpandedRowsKey] = useState<string[]>([])
   const [editing, setEditing] = useState<StudentDocument>()
   const debounce = useDebounce(searchKey)
   const notify = useAppNotification()
@@ -225,6 +233,58 @@ const Page: React.FC = () => {
     return baseColumns
   }, [isStudentRole])
 
+  const groupedData = useMemo(() => {
+    if (isStudentRole) return documents
+
+    const map = new Map<
+      string,
+      StudentDocument & { DOCUMENTS: StudentDocument[] }
+    >()
+
+    documents.forEach((doc) => {
+      const key = String(
+        doc.STUDENT_ID ??
+          doc.PERSON_ID ??
+          `${doc.NAME}-${doc.IDENTITY_DOCUMENT}`
+      )
+      const existing = map.get(key)
+      if (!existing) {
+        map.set(key, {
+          ...doc,
+          DOCUMENT_ID: Number(key) as never,
+          STUDENT_ID:
+            doc.STUDENT_ID ??
+            (Number.isNaN(Number(key)) ? undefined : Number(key)),
+          GROUP_KEY: key as never,
+          DOCUMENTS: [doc],
+        })
+      } else {
+        existing.DOCUMENTS.push(doc)
+      }
+    })
+
+    return Array.from(map.values()).map((group) => {
+      const latestCreated = group.DOCUMENTS.reduce<string | undefined>(
+        (acc, item) => {
+          if (!acc) return item.CREATED_AT
+          return new Date(item.CREATED_AT ?? 0) > new Date(acc ?? 0)
+            ? item.CREATED_AT
+            : acc
+        },
+        undefined
+      )
+      const anySigned = group.DOCUMENTS.some((doc) => doc.SIGNED_AT)
+      const anyActive = group.DOCUMENTS.some((doc) => doc.STATE === 'A')
+
+      return {
+        ...group,
+        CREATED_AT: latestCreated,
+        SIGNED_AT: anySigned ? latestCreated : null,
+        STATE: anyActive ? 'A' : 'I',
+      }
+    })
+  }, [documents, isStudentRole])
+
   const missingRequirements = useMemo(() => {
     if (!isStudentRole) return []
     const docTypes = new Set(
@@ -240,6 +300,20 @@ const Page: React.FC = () => {
       })
       .map((req) => req.NAME || req.REQUIREMENT_KEY)
   }, [documents, requirements, isStudentRole])
+
+  const handleExpandedRow = (expanded: boolean, record: StudentDocument) => {
+    if (expanded) {
+      setExpandedRowsKey((prev) =>
+        prev.includes(record['GROUP_KEY'])
+          ? prev
+          : [...prev, record['GROUP_KEY']]
+      )
+    } else {
+      setExpandedRowsKey((prev) =>
+        prev.filter((id) => id !== record['GROUP_KEY'])
+      )
+    }
+  }
 
   const filter = (
     <CustomRow gutter={[8, 8]}>
@@ -282,10 +356,14 @@ const Page: React.FC = () => {
       </ConditionalComponent>
       <SmartTable
         form={form}
-        rowKey="DOCUMENT_ID"
+        rowKey={isStudentRole ? 'DOCUMENT_ID' : 'GROUP_KEY'}
         loading={isPending || isUpdatePending || isRequirementsPending}
-        columns={columns}
-        dataSource={documents}
+        columns={
+          isStudentRole
+            ? columns
+            : columns.filter((col) => col.key !== 'DOCUMENT_TYPE')
+        }
+        dataSource={groupedData}
         metadata={metadata}
         createText={'Nuevo documento'}
         searchPlaceholder={'Buscar documentos...'}
@@ -295,40 +373,150 @@ const Page: React.FC = () => {
         }}
         onChange={handleSearch}
         onSearch={setSearchKey}
-        onEdit={
-          isStudentRole
-            ? undefined
-            : (record) => {
-                setEditing(record)
-                setModalOpen(true)
-              }
-        }
-        onUpdate={isStudentRole ? undefined : handleToggleState}
+        onEdit={undefined}
+        onUpdate={undefined}
+        showActions={false}
         filter={filter}
         initialFilter={initialFilter}
-        extra={(_, record) => (
-          <>
-            <CustomTooltip title="Descargar">
-              <CustomButton
-                type="link"
-                icon={<DownloadOutlined />}
-                onClick={() =>
-                  handleDownload(record as StudentDocument, 'original')
-                }
-              />
-            </CustomTooltip>
-            <CustomTooltip title="Descargar firmado">
-              <CustomButton
-                type="link"
-                icon={<FileDoneOutlined />}
-                disabled={!(record as StudentDocument).SIGNED_AT}
-                onClick={() =>
-                  handleDownload(record as StudentDocument, 'signed')
-                }
-              />
-            </CustomTooltip>
-          </>
-        )}
+        extra={
+          isStudentRole
+            ? (_, record) => (
+                <>
+                  <CustomTooltip title="Descargar">
+                    <CustomButton
+                      type="link"
+                      icon={<DownloadOutlined />}
+                      onClick={() =>
+                        handleDownload(record as StudentDocument, 'original')
+                      }
+                    />
+                  </CustomTooltip>
+                  <CustomTooltip title="Descargar firmado">
+                    <CustomButton
+                      type="link"
+                      icon={<FileDoneOutlined />}
+                      disabled={!(record as StudentDocument).SIGNED_AT}
+                      onClick={() =>
+                        handleDownload(record as StudentDocument, 'signed')
+                      }
+                    />
+                  </CustomTooltip>
+                </>
+              )
+            : undefined
+        }
+        expandable={
+          isStudentRole
+            ? undefined
+            : {
+                indentSize: 20,
+                expandedRowKeys,
+                expandIcon: ({ expanded, ...props }) => (
+                  <CustomButton
+                    onClick={() =>
+                      handleExpandedRow(expanded, props.record as never)
+                    }
+                    type={'text'}
+                    icon={expanded ? <MinusOutlined /> : <PlusOutlined />}
+                  />
+                ),
+                rowExpandable: (record) =>
+                  Array.isArray(record.DOCUMENTS) && record.DOCUMENTS.length > 0,
+                expandedRowRender: (record) => {
+                  const items = record.DOCUMENTS as StudentDocument[]
+                  const childColumns: ColumnsType<StudentDocument> = [
+                    {
+                      dataIndex: 'DOCUMENT_TYPE',
+                      key: 'DOCUMENT_TYPE',
+                      title: 'Documento',
+                      render: (_, item) => (
+                        <CustomSpace direction="vertical" size={0}>
+                          <CustomText strong>{item.DOCUMENT_TYPE}</CustomText>
+                          <CustomText type="secondary">{item.FILE_NAME}</CustomText>
+                        </CustomSpace>
+                      ),
+                    },
+                    {
+                      dataIndex: 'SIGNED_AT',
+                      key: 'SIGNED_AT',
+                      title: 'Firmado',
+                      render: (value) =>
+                        value
+                          ? formatter({ value, format: 'datetime' })
+                          : 'Sin firma',
+                    },
+                    {
+                      dataIndex: 'CREATED_AT',
+                      key: 'CREATED_AT',
+                      title: 'Registro',
+                      render: (value) => formatter({ value, format: 'datetime' }),
+                    },
+                    {
+                      dataIndex: 'STATE',
+                      key: 'STATE',
+                      title: 'Estado',
+                      render: (state) => (state === 'A' ? 'Activo' : 'Inactivo'),
+                    },
+                    {
+                      key: 'ACTIONS',
+                      title: 'Acciones',
+                      align: 'center',
+                      render: (_, item) => (
+                        <CustomSpace direction="horizontal" size={0}>
+                          <CustomTooltip title="Descargar">
+                            <CustomButton
+                              type="link"
+                              icon={<DownloadOutlined />}
+                              onClick={() => handleDownload(item, 'original')}
+                            />
+                          </CustomTooltip>
+                          <CustomTooltip title="Descargar firmado">
+                            <CustomButton
+                              type="link"
+                              icon={<FileDoneOutlined />}
+                              disabled={!item.SIGNED_AT}
+                              onClick={() => handleDownload(item, 'signed')}
+                            />
+                          </CustomTooltip>
+                          <CustomTooltip title="Editar">
+                            <CustomButton
+                              type="link"
+                              icon={<EditOutlined />}
+                              onClick={() => {
+                                setEditing(item)
+                                setModalOpen(true)
+                              }}
+                            />
+                          </CustomTooltip>
+                          <CustomTooltip
+                            title={item.STATE === 'A' ? 'Inhabilitar' : 'Habilitar'}
+                          >
+                            <CustomButton
+                              type="link"
+                              danger={item.STATE === 'A'}
+                              onClick={() => handleToggleState(item)}
+                            >
+                              {item.STATE === 'A' ? 'Desactivar' : 'Activar'}
+                            </CustomButton>
+                          </CustomTooltip>
+                        </CustomSpace>
+                      ),
+                    },
+                  ]
+
+                  return (
+                    <CustomTable
+                      size={'small'}
+                      bordered={false}
+                      rowKey="DOCUMENT_ID"
+                      columns={childColumns}
+                      dataSource={items}
+                      pagination={false}
+                    />
+                  )
+                },
+              }
+        }
       />
 
       <ConditionalComponent condition={modalOpen}>

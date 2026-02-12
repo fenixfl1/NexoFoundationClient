@@ -163,6 +163,7 @@ const ReferenceForm: React.FC<ReferenceFormProps> = ({
 
             <CustomCol xs={24}>
               <CustomFormItem
+                hidden
                 shouldUpdate
                 label={' '}
                 colon={false}

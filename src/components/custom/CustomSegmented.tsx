@@ -10,6 +10,9 @@ interface CustomSegmentedProps extends Omit<SegmentedProps, 'onChange'> {
 
 const Segmented = styled(AntSegmented)<SegmentedProps>`
   background-color: ${({ theme }) => theme.colorBgContainer} !important;
+  .ant-segmented-item-label {
+    width: max-content;
+  }
 `
 
 const CustomSegmented = React.forwardRef<HTMLDivElement, CustomSegmentedProps>(

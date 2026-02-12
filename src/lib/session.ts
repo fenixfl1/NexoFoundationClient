@@ -22,6 +22,7 @@ export type UserData = {
   avatar: string
   roleId: string
   business: Business
+  personId: string
   sessionCookie: {
     token: string
     expiration: string
@@ -39,7 +40,7 @@ export const createSession = async (user: UserData): Promise<void> => {
     ...restProps,
   })
 
-  sessionStorage.setItem('avatar', avatar)
+  localStorage.setItem('avatar', avatar)
 
   Cookies.set(COOKIE_KEY_USER_DATA, sessionInfo, { expires })
   Cookies.set(COOKIE_KEY_SESSION_TOKEN, sessionToken, { expires })
@@ -56,7 +57,7 @@ export const removeSession = (): void => {
     COOKIE_KEY_USER_NAME,
   ]
 
-  sessionStorage.removeItem('avatar')
+  localStorage.removeItem('avatar')
   requiredCookiesKeys.forEach((cookieKey) => Cookies.remove(cookieKey))
 }
 
@@ -66,7 +67,7 @@ export const getSessionInfo = (): UserData => {
     return <UserData>{}
   }
 
-  const avatar = sessionStorage.getItem('avatar') || ''
+  const avatar = localStorage.getItem('avatar') || ''
   const userData = JSON.parse(Cookies.get(COOKIE_KEY_USER_DATA))
   return {
     ...userData,
