@@ -150,6 +150,7 @@ const RolesPage: React.FC = () => {
   return (
     <>
       <SmartTable
+      exportable
         form={form}
         loading={isGetRolesPending || isUpdatePending || isGetOneRoleFetching}
         columns={columns}

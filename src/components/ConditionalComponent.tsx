@@ -71,7 +71,7 @@ const ConditionalComponent: React.FC<ConditionalComponentProps> = ({
         })
       : fallback
 
-  return element as React.ReactElement
+  return <>{element}</>
 }
 
 export default ConditionalComponent

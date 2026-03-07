@@ -14,7 +14,7 @@ const defaultMetadata: Metadata = {
 interface UseScholarshipStore {
   scholarships: Scholarship[]
   metadata: Metadata
-  summary: Record<string, number>
+  summary: Record<string, string | number>
   setScholarships: (payload: ReturnPayload<Scholarship>) => void
 }
 

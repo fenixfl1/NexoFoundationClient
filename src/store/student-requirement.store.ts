@@ -14,7 +14,7 @@ const defaultMetadata: Metadata = {
 interface UseStudentRequirementStore {
   studentRequirements: StudentRequirement[]
   metadata: Metadata
-  summary: Record<string, number>
+  summary: Record<string, string | number>
   setStudentRequirements: (payload: ReturnPayload<StudentRequirement>) => void
 }
 

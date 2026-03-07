@@ -164,6 +164,7 @@ const SponsorsPage: React.FC = () => {
     <>
       <CustomDivider />
       <SmartTable
+      exportable
         form={form}
         rowKey="SPONSOR_ID"
         loading={isPending || isUpdatePending}

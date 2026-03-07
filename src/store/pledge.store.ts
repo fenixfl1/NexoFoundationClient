@@ -14,7 +14,7 @@ const defaultMetadata: Metadata = {
 interface UsePledgeStore {
   pledges: Pledge[]
   metadata: Metadata
-  summary: Record<string, number>
+  summary: Record<string, string | number>
   setPledges: (payload: ReturnPayload<Pledge>) => void
 }
 

@@ -1,5 +1,6 @@
 import { Contact } from '../contact/contact.types'
 import { Student } from '../students/student.types'
+import { StudentDocument } from '../student-documents/student-document.types'
 
 export interface Person {
   PERSON_ID: number
@@ -21,6 +22,7 @@ export interface Person {
   AVATAR: string
   CONTACTS: Contact[]
   REFERENCES: Reference[]
+  STUDENT_DOCUMENTS?: StudentDocument[]
   USER_ID: number
 }
 
@@ -61,4 +63,9 @@ export interface PersonPayload {
     DESCRIPTION?: string | null
     STATE?: string
   }[]
+}
+
+export interface UpdatePersonPayload extends Partial<PersonPayload> {
+  PERSON_ID: number
+  STATE?: string
 }

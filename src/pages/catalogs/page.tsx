@@ -248,6 +248,7 @@ const Page: React.FC = () => {
   return (
     <>
       <SmartTable
+      exportable
         columns={columns}
         createText={'Crear Catálogo'}
         dataSource={catalogList}

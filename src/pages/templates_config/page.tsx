@@ -178,6 +178,7 @@ const TemplatesSection: React.FC = () => {
   return (
     <>
       <SmartTable
+      exportable
         form={form}
         rowKey="TEMPLATE_ID"
         loading={isPending || isUpdatePending}
@@ -431,6 +432,7 @@ const NotificationsSection: React.FC = () => {
       />
       <CustomDivider />
       <SmartTable
+      exportable
         form={form}
         extra={extraAction}
         rowKey="NOTIFICATION_ID"

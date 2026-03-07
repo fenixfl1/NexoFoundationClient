@@ -560,6 +560,63 @@ const normalizeShowHead = (
   return showHead ?? 'everyPage'
 }
 
+const isImageDataUrl = (value: string) =>
+  /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value)
+
+const isLikelyBase64 = (value: string) =>
+  value.length > 100 && /^[A-Za-z0-9+/=\s]+$/.test(value)
+
+const toDataUrlFromBlob = async (blob: Blob): Promise<string | undefined> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(String(reader.result || '') || undefined)
+    reader.onerror = () => resolve(undefined)
+    reader.readAsDataURL(blob)
+  })
+}
+
+const resolveLogoDataUrl = async (
+  value?: string | null
+): Promise<string | undefined> => {
+  const raw = String(value ?? '').trim()
+  if (!raw) return undefined
+
+  if (isImageDataUrl(raw)) {
+    return raw
+  }
+
+  if (isLikelyBase64(raw)) {
+    return `data:image/png;base64,${raw.replace(/\s+/g, '')}`
+  }
+
+  if (!isBrowser) {
+    return undefined
+  }
+
+  const canFetch =
+    /^https?:\/\//i.test(raw) || raw.startsWith('/') || raw.startsWith('blob:')
+
+  if (!canFetch) {
+    return undefined
+  }
+
+  try {
+    const response = await fetch(raw)
+    if (!response.ok) return undefined
+    const blob = await response.blob()
+    return toDataUrlFromBlob(blob)
+  } catch {
+    return undefined
+  }
+}
+
+// const detectPdfImageType = (dataUrl: string): 'PNG' | 'JPEG' => {
+//   if (/^data:image\/jpe?g;base64,/i.test(dataUrl)) {
+//     return 'JPEG'
+//   }
+//   return 'PNG'
+// }
+
 export async function exportToPDF<T = any>({
   data = [],
   filename = 'reporte.pdf',
@@ -586,12 +643,29 @@ export async function exportToPDF<T = any>({
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
+  const logoDataUrl = await resolveLogoDataUrl(info?.LOGO)
 
   doc.setFontSize(18)
   doc.text(title, pageWidth / 2, 20, { align: 'center' })
 
+  if (logoDataUrl) {
+    try {
+      // doc.addImage(logoDataUrl, detectPdfImageType(logoDataUrl), 10, 10, 24, 24)
+    } catch {
+      // ignore invalid image payloads
+    }
+  }
+
+  let y = logoDataUrl ? 38 : 30
+  if (info?.NAME) {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14)
+    doc.text(info.NAME, 10, y)
+    y += 6
+  }
+
+  doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
-  let y = 30
   const addLine = (text?: string) => {
     if (!text) return
     doc.text(text, 10, y)
@@ -601,7 +675,6 @@ export async function exportToPDF<T = any>({
   const rnc = formatter({ value: info.RNC, format: 'document' })
   const phone = formatter({ value: info.PHONE, format: 'phone' })
 
-  addLine(info?.NAME)
   addLine(info?.ADDRESS ? `Dirección: ${info.ADDRESS}` : undefined)
   addLine(info?.RNC ? `RNC: ${rnc}` : undefined)
   addLine(info?.PHONE ? `Teléfono: ${phone}` : undefined)
@@ -619,11 +692,13 @@ export async function exportToPDF<T = any>({
     })
   }
 
+  const dividerY = Math.max(50, y + 2)
+
   doc.setDrawColor(0)
   doc.setLineWidth(0.2)
-  doc.line(10, 50, pageWidth - 10, 50)
+  doc.line(10, dividerY, pageWidth - 10, dividerY)
 
-  let tableStartY = 55
+  let tableStartY = dividerY + 5
 
   if (extraHeaderHtml) {
     if (isBrowser) {

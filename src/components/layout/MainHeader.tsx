@@ -4,7 +4,12 @@ import CustomHeader from '../custom/CustomHeader'
 import CustomRow from '../custom/CustomRow'
 import CustomCol from '../custom/CustomCol'
 import CustomSpace from '../custom/CustomSpace'
-import { LogoutOutlined, UserOutlined } from '@ant-design/icons'
+import {
+  LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import { CustomText, CustomTitle } from '../custom/CustomParagraph'
 import capitalize from 'src/utils/capitalize'
 import { getSessionInfo, removeSession } from 'src/lib/session'
@@ -20,15 +25,38 @@ import { usePeopleStore } from 'src/store/people.store'
 import CustomPopover from '../custom/CustomPopover'
 import CustomDivider from '../custom/CustomDivider'
 import { useGeneralStore } from 'src/store/general.store'
+import { useAppContext } from 'src/context/AppContext'
+// import { ROLE_STUDENT_ID } from 'src/utils/role-path'
 
 const Header = styled(CustomHeader)<{ width: string | number }>`
   display: flex;
   align-items: center;
-  height: 64px;
+  height: 72px;
   width: ${({ width }) => width};
-  border-radius: 8px !important;
-  margin: 21px 24px 0 20px;
-  padding: 0 35px !important;
+  border-radius: 0 !important;
+  margin: 0;
+  padding: 0 24px !important;
+  background: ${({ theme }) =>
+    theme.colorBgLayout ||
+    theme.baseBgColor ||
+    theme.colorBgContainer} !important;
+  border-bottom: 1px solid
+    ${({ theme }) =>
+      theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'};
+  box-shadow: none;
+`
+
+const TriggerButton = styled(CustomButton)`
+  width: 44px;
+  height: 44px;
+  padding-inline: 0 !important;
+  border-radius: 12px !important;
+`
+
+const TitleBlock = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 `
 
 interface MainHeaderProps {
@@ -36,15 +64,16 @@ interface MainHeaderProps {
   showLogout?: boolean
 }
 
-const MainHeader: React.FC<MainHeaderProps> = ({
-  width = 'calc(100vw - 280px)',
-}) => {
+const MainHeader: React.FC<MainHeaderProps> = ({ width = '100%' }) => {
   const { confirmModal } = useCustomModal()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { collapsed, setCollapsed } = useAppContext()
 
   const { setProfileVisibilitySate, profileVisibilityState } = usePeopleStore()
   const { currenMenuOption, reset } = useMenuOptionStore()
   const { title } = useGeneralStore()
+  // const { roleId } = getSessionInfo()
+  // const isStudentRole = String(roleId) === ROLE_STUDENT_ID
 
   useEffect(() => {
     if (!profileVisibilityState && searchParams.get('username')) {
@@ -103,10 +132,26 @@ const MainHeader: React.FC<MainHeaderProps> = ({
           height={'100%'}
           align={'middle'}
         >
-          <CustomCol xs={12}>
-            <CustomTitle level={3} style={{ margin: 'auto' }}>
-              {title || currenMenuOption?.DESCRIPTION}
-            </CustomTitle>
+          <CustomCol xs={16}>
+            <CustomSpace direction="horizontal" size={'middle'} width={null}>
+              <ConditionalComponent condition={false}>
+                <TriggerButton
+                  type="text"
+                  icon={
+                    collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
+                  }
+                  onClick={() => setCollapsed(!collapsed)}
+                />
+              </ConditionalComponent>
+
+              <TitleBlock>
+                <CustomTitle level={3} style={{ margin: 0 }}>
+                  {title ||
+                    currenMenuOption?.DESCRIPTION ||
+                    currenMenuOption?.NAME}
+                </CustomTitle>
+              </TitleBlock>
+            </CustomSpace>
           </CustomCol>
 
           <CustomSpace direction="horizontal" width={null}>

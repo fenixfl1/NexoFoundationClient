@@ -19,7 +19,11 @@ import GeneralData from '../components/GeneralData'
 import CustomCard from 'src/components/custom/CustomCard'
 import Contacts from '../components/Contacts'
 import References from '../components/References'
-import { PersonPayload, Reference } from 'src/services/people/people.types'
+import {
+  PersonPayload,
+  Reference,
+  UpdatePersonPayload,
+} from 'src/services/people/people.types'
 import { Contact, ContactType } from 'src/services/contact/contact.types'
 import { useErrorHandler } from 'src/hooks/use-error-handler'
 import { useCreatePersonMutation } from 'src/services/people/useCreatePersonMutation'
@@ -162,6 +166,74 @@ const Page: React.FC = () => {
     })
   }
 
+  const normalizeDocumentType = (value?: string | null) =>
+    String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+
+  const getDocumentsPayload = () => {
+    const mappedDocs = Object.values(docsMap ?? {}).map((doc) => {
+      const requirement = requiredList.find(
+        (r) => r.REQUIREMENT_ID === doc.REQUIREMENT_ID
+      )
+
+      return {
+        DOCUMENT_TYPE:
+          requirement?.REQUIREMENT_KEY ||
+          requirement?.NAME ||
+          `REQ-${doc.REQUIREMENT_ID}`,
+        DESCRIPTION: requirement?.DESCRIPTION,
+        FILE_BASE64: doc.FILE_BASE64,
+        FILE_NAME: doc.FILE_NAME,
+        MIME_TYPE: doc.MIME_TYPE,
+        SIGNED_BASE64: doc.SIGNED_BASE64,
+        SIGNED_AT: doc.SIGNED_AT,
+        STATE: 'A',
+      }
+    })
+
+    if (mappedDocs.length) {
+      return mappedDocs
+    }
+
+    if (isEditing && Array.isArray(person.STUDENT_DOCUMENTS)) {
+      return person.STUDENT_DOCUMENTS
+        .filter((doc) => (doc.STATE ?? 'A') === 'A' && !!doc.FILE_BASE64)
+        .map((doc) => ({
+          DOCUMENT_TYPE: doc.DOCUMENT_TYPE,
+          DESCRIPTION: doc.DESCRIPTION,
+          FILE_BASE64: doc.FILE_BASE64,
+          FILE_NAME: doc.FILE_NAME,
+          MIME_TYPE: doc.MIME_TYPE,
+          SIGNED_BASE64: doc.SIGNED_BASE64,
+          SIGNED_AT: doc.SIGNED_AT,
+          STATE: 'A',
+        }))
+    }
+
+    return []
+  }
+
+  const getMissingRequiredDocuments = () => {
+    const payloadDocs = getDocumentsPayload()
+    const docTypes = new Set(
+      payloadDocs.map((doc) => normalizeDocumentType(doc.DOCUMENT_TYPE))
+    )
+
+    return requiredList.some((req) => {
+      if (!req.IS_REQUIRED) return false
+
+      return !(
+        docTypes.has(normalizeDocumentType(req.REQUIREMENT_KEY)) ||
+        docTypes.has(normalizeDocumentType(req.NAME)) ||
+        docTypes.has(normalizeDocumentType(`REQ-${req.REQUIREMENT_ID}`))
+      )
+    })
+  }
+
   const isStudent = Number(roleId) === STUDENT_ROLE_ID
 
   const steps = [
@@ -187,6 +259,8 @@ const Page: React.FC = () => {
             title: 'Documentos requeridos',
             content: (
               <RequiredDocuments
+                key={person.PERSON_ID || 'new-person-docs'}
+                initialDocuments={person.STUDENT_DOCUMENTS}
                 onChange={(docs, req) => {
                   setDocsMap(docs)
                   setRequiredList(req)
@@ -214,9 +288,7 @@ const Page: React.FC = () => {
         throw new Error('Datos incompletos en el formulario.')
       }
 
-      const missingRequired = requiredList.some(
-        (req) => req.IS_REQUIRED && !docsMap[req.REQUIREMENT_ID]
-      )
+      const missingRequired = getMissingRequiredDocuments()
 
       const payload: PersonPayload = {
         ...formState,
@@ -228,21 +300,7 @@ const Page: React.FC = () => {
             ? formState.STUDENT
             : undefined,
         INCOMPLETE: missingRequired,
-        DOCUMENTS: Object.values(docsMap ?? {}).map((doc) => {
-          const requirement = requiredList.find(
-            (r) => r.REQUIREMENT_ID === doc.REQUIREMENT_ID
-          )
-          return {
-            DOCUMENT_TYPE: requirement?.NAME || `REQ-${doc.REQUIREMENT_ID}`,
-            DESCRIPTION: requirement?.DESCRIPTION,
-            FILE_BASE64: doc.FILE_BASE64,
-            FILE_NAME: doc.FILE_NAME,
-            MIME_TYPE: doc.MIME_TYPE,
-            SIGNED_BASE64: doc.SIGNED_BASE64,
-            SIGNED_AT: doc.SIGNED_AT,
-            STATE: 'A',
-          }
-        }),
+        DOCUMENTS: getDocumentsPayload(),
       }
 
       await createPerson(payload)
@@ -269,7 +327,12 @@ const Page: React.FC = () => {
 
       delete values.USERNAME
 
-      const { message, data } = await updatePerson(values)
+      const payload: UpdatePersonPayload = {
+        ...values,
+        PERSON_ID: Number(person.PERSON_ID),
+      }
+
+      const { message, data } = await updatePerson(payload)
 
       successNotification({ message })
       setFormState((prev) => ({ ...(prev ?? {}), ...data }) as never)
@@ -285,6 +348,24 @@ const Page: React.FC = () => {
     successNotification({
       message: 'Información académica actualizada exitosamente.',
     })
+  }
+
+  const handleUpdateDocuments = async () => {
+    await form.validateFields()
+    const missingRequired = getMissingRequiredDocuments()
+
+    const payload: UpdatePersonPayload = {
+      PERSON_ID: Number(person.PERSON_ID),
+      STATE: missingRequired ? 'I' : 'A',
+      DOCUMENTS: getDocumentsPayload(),
+    }
+
+    const { message, data } = await updatePerson(payload)
+
+    successNotification({
+      message: message || 'Documentos actualizados exitosamente.',
+    })
+    setFormState((prev) => ({ ...(prev ?? {}), ...data }) as never)
   }
 
   const handleNext = async () => {
@@ -345,9 +426,11 @@ const Page: React.FC = () => {
           break
         }
         case StepKeys.DOCUMENTS: {
-          const missingRequired = requiredList.some(
-            (req) => req.IS_REQUIRED && !docsMap[req.REQUIREMENT_ID]
-          )
+          const missingRequired = getMissingRequiredDocuments()
+
+          if (isEditing) {
+            await handleUpdateDocuments()
+          }
 
           setFormState(
             (prev) =>

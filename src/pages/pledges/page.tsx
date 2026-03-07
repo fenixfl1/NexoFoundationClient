@@ -199,6 +199,7 @@ const PledgesPage: React.FC = () => {
       <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
       <CustomDivider />
       <SmartTable
+      exportable
         form={form}
         rowKey="PLEDGE_ID"
         loading={isPending || isUpdatePending}

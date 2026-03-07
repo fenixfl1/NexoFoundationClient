@@ -21,6 +21,7 @@ import { useGetCatalog } from 'src/hooks/use-get-catalog'
 import ModuleSummary from 'src/components/ModuleSummary'
 import useDebounce from 'src/hooks/use-debounce'
 import ConditionalComponent from 'src/components/ConditionalComponent'
+import { ColumnMapValue } from 'src/components/custom/CustomTable'
 
 const RequestsPage: React.FC = () => {
   const [modalState, setModalState] = useState<boolean>()
@@ -43,6 +44,7 @@ const RequestsPage: React.FC = () => {
 
   const [status] = useGetCatalog('ID_LIST_REQUEST_STATUS')
   const [requestTypes] = useGetCatalog('ID_LIST_REQUEST_TYPES')
+  const [careesList] = useGetCatalog('ID_LIST_CAREERS')
 
   const loadRequests = useCallback(
     (page = metadata.currentPage, size = metadata.pageSize) => {
@@ -186,6 +188,46 @@ const RequestsPage: React.FC = () => {
     },
   ]
 
+  const columnsMap: Partial<
+    Record<keyof RequestItem, ColumnMapValue<RequestItem>>
+  > = {
+    NAME: {
+      header: 'Becario',
+      render: (_, record) => `${record.NAME} ${record.LAST_NAME}`,
+    },
+    IDENTITY_DOCUMENT: {
+      header: 'Doc. Identidad',
+      render: (value: string) => formatter({ value, format: 'document' }),
+    },
+    UNIVERSITY: 'Universidad',
+    CAREER: {
+      header: 'Carrera',
+      render: (value: string) => {
+        const item = careesList?.find((item) => item.VALUE === value)
+        if (item?.VALUE) {
+          return `${item?.LABEL} (${item.VALUE})`
+        }
+
+        return 'Por definir'
+      },
+    },
+    REQUEST_TYPE: {
+      header: 'Tipo Solicitud',
+      render: (value: string) => {
+        const item = requestTypes?.find((item) => item.VALUE === value)
+        if (item?.VALUE) {
+          return item.LABEL
+        }
+        return 'N/A'
+      },
+    },
+    NEXT_APPOINTMENT: {
+      header: 'Cita Programada',
+      render: (value: string) =>
+        value ? formatter({ value, format: 'date' }) : 'No programada',
+    },
+  }
+
   return (
     <>
       <CustomSpin spinning={isPending}>
@@ -201,6 +243,8 @@ const RequestsPage: React.FC = () => {
         <CustomDivider />
 
         <SmartTable
+          exportable
+          columnsMap={columnsMap}
           showStates={false}
           dataSource={requests}
           columns={columns}

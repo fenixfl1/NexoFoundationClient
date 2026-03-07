@@ -175,6 +175,7 @@ const FollowUpPage: React.FC = () => {
   return (
     <>
       <SmartTable
+      exportable
         form={form}
         rowKey="FOLLOW_UP_ID"
         loading={isPending || isUpdatePending}

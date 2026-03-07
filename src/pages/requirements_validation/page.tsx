@@ -148,6 +148,7 @@ const RequirementsSection: React.FC = () => {
   return (
     <>
       <SmartTable
+      exportable
         form={form}
         rowKey="REQUIREMENT_ID"
         loading={isPending || isUpdatePending}
@@ -352,6 +353,7 @@ const ValidationSection: React.FC = () => {
       <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
       <CustomDivider />
       <SmartTable
+      exportable
         form={form}
         rowKey="STUDENT_REQUIREMENT_ID"
         loading={isPending || isUpdatePending}

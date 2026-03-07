@@ -72,6 +72,7 @@ const CustomTable = React.forwardRef<any, CustomTableProps>(
       dataSource = [],
       expandable,
       bordered = false,
+      exportable,
       onChange,
       columnsMap,
       exportInitialValues,
@@ -81,10 +82,16 @@ const CustomTable = React.forwardRef<any, CustomTableProps>(
   ) => {
     const [modalState, setModalState] = useState(false)
 
+    const canExport = Boolean(
+      (exportable ?? !!columnsMap) &&
+        columnsMap &&
+        Object.keys(columnsMap).length
+    )
+
     return (
       <>
         <Container>
-          <ConditionalComponent condition={!!columnsMap}>
+          <ConditionalComponent condition={canExport}>
             <CustomTooltip title={'Exportar'}>
               <CustomButton
                 className={'btn-export-table'}
@@ -119,9 +126,9 @@ const CustomTable = React.forwardRef<any, CustomTableProps>(
           />
         </Container>
 
-        <ConditionalComponent condition={modalState}>
+        <ConditionalComponent condition={canExport && modalState}>
           <ExportOptions
-            columnsMap={columnsMap}
+            columnsMap={columnsMap ?? {}}
             dataSource={dataSource}
             onCancel={() => setModalState(false)}
             open={modalState}

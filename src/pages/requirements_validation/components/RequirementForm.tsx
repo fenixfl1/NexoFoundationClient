@@ -24,13 +24,17 @@ interface RequirementFormProps {
   onSuccess?: () => void
 }
 
+type RequirementFormValues = Omit<Requirement, 'IS_REQUIRED'> & {
+  IS_REQUIRED: 'true' | 'false'
+}
+
 const RequirementForm: React.FC<RequirementFormProps> = ({
   open,
   requirement,
   onClose,
   onSuccess,
 }) => {
-  const [form] = Form.useForm<Requirement>()
+  const [form] = Form.useForm<RequirementFormValues>()
   const [errorHandler] = useErrorHandler()
   const notify = useAppNotification()
 
@@ -41,21 +45,28 @@ const RequirementForm: React.FC<RequirementFormProps> = ({
 
   useEffect(() => {
     if (requirement && open) {
-      form.setFieldsValue({ ...requirement })
+      form.setFieldsValue({
+        ...requirement,
+        IS_REQUIRED: requirement.IS_REQUIRED ? 'true' : 'false',
+      })
     } else if (open) {
       form.resetFields()
       form.setFieldValue('STATE', 'A')
-      form.setFieldValue('IS_REQUIRED', true)
+      form.setFieldValue('IS_REQUIRED', 'true')
     }
   }, [requirement, open])
 
   const handleFinish = async () => {
     try {
       const data = await form.validateFields()
+      const payload = {
+        ...data,
+        IS_REQUIRED: data.IS_REQUIRED === 'true',
+      }
 
       if (requirement?.REQUIREMENT_ID) {
         await updateRequirement({
-          ...data,
+          ...payload,
           REQUIREMENT_ID: requirement.REQUIREMENT_ID,
         })
         notify({
@@ -63,7 +74,7 @@ const RequirementForm: React.FC<RequirementFormProps> = ({
           description: 'Requisito actualizado correctamente.',
         })
       } else {
-        await createRequirement(data)
+        await createRequirement(payload)
         notify({
           message: 'Operación exitosa',
           description: 'Requisito creado correctamente.',
@@ -123,8 +134,8 @@ const RequirementForm: React.FC<RequirementFormProps> = ({
               <CustomFormItem label={'Obligatorio'} name={'IS_REQUIRED'}>
                 <CustomSelect
                   options={[
-                    { label: 'Sí', value: true },
-                    { label: 'No', value: false },
+                    { label: 'Sí', value: 'true' },
+                    { label: 'No', value: 'false' },
                   ]}
                 />
               </CustomFormItem>

@@ -1,7 +1,8 @@
 import { PageMetadata } from 'src/types/general'
 
 const metadata: PageMetadata = {
-  title: 'Mis Citas',
+  title: 'Reportes',
 }
 
 export default metadata
+

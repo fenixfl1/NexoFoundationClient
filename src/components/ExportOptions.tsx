@@ -160,6 +160,8 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({
 
       onCancel?.()
     } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log({ error })
       errorHandler(error)
     }
   }

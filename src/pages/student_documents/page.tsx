@@ -355,6 +355,7 @@ const Page: React.FC = () => {
         </div>
       </ConditionalComponent>
       <SmartTable
+      exportable
         form={form}
         rowKey={isStudentRole ? 'DOCUMENT_ID' : 'GROUP_KEY'}
         loading={isPending || isUpdatePending || isRequirementsPending}

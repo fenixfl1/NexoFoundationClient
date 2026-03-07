@@ -9,7 +9,7 @@ import CustomTextarea from 'src/components/custom/CustomTextArea'
 import CustomDatePicker from 'src/components/custom/CustomDatePicker'
 import CustomInputNumber from 'src/components/custom/CustomInputNumber'
 import CustomSelect from 'src/components/custom/CustomSelect'
-import { Activity, ActivityPayload, ActivityStatus } from 'src/services/activities/activity.types'
+import { Activity, ActivityPayload } from 'src/services/activities/activity.types'
 
 export type ActivityFormValues = ActivityPayload & { ACTIVITY_ID?: number }
 

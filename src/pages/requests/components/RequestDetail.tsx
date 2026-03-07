@@ -129,7 +129,7 @@ const RequestDetail: React.FC<RequestDetailProps> = ({
                 <CustomCol xs={24} md={12}>
                   <CustomText type="secondary">Nombre</CustomText>
                   <div>
-                    {request.STUDENT_NAME} {request.STUDENT_LAST_NAME}
+                    {request.NAME} {request.LAST_NAME}
                   </div>
                 </CustomCol>
                 <CustomCol xs={24} md={12}>

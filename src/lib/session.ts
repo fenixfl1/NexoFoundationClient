@@ -40,11 +40,16 @@ export const createSession = async (user: UserData): Promise<void> => {
     ...restProps,
   })
 
+  const { LOGO, ...businessInfo } = business
+
   localStorage.setItem('avatar', avatar)
+  localStorage.setItem('businessLogo', LOGO)
 
   Cookies.set(COOKIE_KEY_USER_DATA, sessionInfo, { expires })
   Cookies.set(COOKIE_KEY_SESSION_TOKEN, sessionToken, { expires })
-  Cookies.set(COOKE_KEY_BUSINESS_INFO, JSON.stringify(business), { expires })
+  Cookies.set(COOKE_KEY_BUSINESS_INFO, JSON.stringify(businessInfo), {
+    expires,
+  })
   Cookies.set(COOKIE_KEY_USER_NAME, username, {
     expires: new Date(moment(expires).add(-1, 'minutes').toISOString()),
   })
@@ -80,5 +85,12 @@ export const getSessionToken = (): string => {
 }
 
 export const getBusinessInfo = (): Business => {
-  return JSON.parse(Cookies.get(COOKE_KEY_BUSINESS_INFO) ?? '{}')
+  try {
+    const business = JSON.parse(Cookies.get(COOKE_KEY_BUSINESS_INFO) || '{}')
+    business.LOGO = localStorage.getItem('businessLogo')
+
+    return business
+  } catch {
+    return <Business>{}
+  }
 }

@@ -226,6 +226,7 @@ const ScholarshipsSection: React.FC = () => {
       <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
       <CustomDivider />
       <SmartTable
+      exportable
         form={form}
         rowKey="SCHOLARSHIP_ID"
         loading={isPending || isUpdatePending}
@@ -426,6 +427,7 @@ const DisbursementsSection: React.FC = () => {
       <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
       <CustomDivider />
       <SmartTable
+      exportable
         form={form}
         rowKey="DISBURSEMENT_ID"
         loading={isPending || isUpdatePending}
@@ -635,6 +637,7 @@ const ScholarshipCostsSection: React.FC = () => {
   return (
     <>
       <SmartTable
+      exportable
         form={form}
         rowKey="COST_ID"
         loading={isPending || isUpdatePending}

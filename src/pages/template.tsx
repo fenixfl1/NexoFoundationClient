@@ -3,7 +3,6 @@ import CustomSider from 'src/components/custom/CustomSider'
 import CustomLayout from 'src/components/custom/CustomLayout'
 import CustomMenu from 'src/components/custom/CustomMenu'
 import CustomContent from 'src/components/custom/CustomContent'
-import CustomRow from 'src/components/custom/CustomRow'
 import styled from 'styled-components'
 import ConditionalComponent from 'src/components/ConditionalComponent'
 import ThemeTransitionLayout from 'src/components/ThemeTransition'
@@ -29,84 +28,114 @@ import { getCurrentRoleBasePath, ROLE_STUDENT_ID } from 'src/utils/role-path'
 import { getSessionInfo } from 'src/lib/session'
 import { addRecentMenuOption } from 'src/utils/recent-menu'
 
-const LogoWrapper = styled.div`
+const Shell = styled(CustomLayout)`
+  height: 100vh !important;
+  padding: 0;
+  gap: 0;
+  background: ${({ theme }) => theme.colorBgLayout || theme.baseBgColor};
+`
+
+const LogoWrapper = styled.div<{ $collapsed: boolean }>`
   position: sticky;
   top: 0;
   z-index: 1;
-  background-color: ${({ theme }) =>
-    theme.isDark ? '#001529' : theme.colorBgContainer};
-  padding: 10px 0;
+  padding: 12px 0;
 `
 
-const LogoContainer = styled.div`
-  height: 6rem;
+const LogoContainer = styled.div<{ $collapsed: boolean }>`
+  height: ${({ $collapsed }) => ($collapsed ? '68px' : '96px')};
   display: flex;
   justify-content: center;
   align-items: center;
+  padding-inline: ${({ $collapsed }) => ($collapsed ? '8px' : '16px')};
+  transition: all 0.2s ease;
+
   img {
-    width: 75%;
+    width: ${({ $collapsed }) => ($collapsed ? '46px' : '78%')};
+    max-width: ${({ $collapsed }) => ($collapsed ? '46px' : '190px')};
+    transition: all 0.2s ease;
     filter: ${({ theme: { isDark } }) => (isDark ? 'invert(100%)' : undefined)};
   }
 `
 
 const Content = styled(CustomContent)`
-  overflow: auto;
-  padding: 24px 50px;
-  margin: 15px 0 0 0;
-  min-height: 280px;
+  overflow: initial;
+  padding: 0;
+  margin: 0 auto;
+  min-height: auto;
   width: 100%;
-  max-width: 1200px;
-  border-radius: ${({ theme }) => theme.borderRadius}px !important;
+  max-width: 1480px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  box-sizing: border-box;
 `
 
 const BodyContainer = styled.div`
+  min-width: 0;
+  flex: 1;
   height: 100vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
   box-sizing: border-box !important;
 `
 
-const Sider = styled(CustomSider)`
+const Viewport = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  box-sizing: border-box !important;
+`
+
+const Sider = styled(CustomSider)<{ $collapsed: boolean }>`
   height: 100vh !important;
-  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
-    0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
-  padding: 10px !important;
+  box-shadow: none;
+  border-radius: 0 !important;
+  border-right: 1px solid
+    ${({ theme }) =>
+      theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'};
+  padding: ${({ $collapsed }) =>
+    $collapsed ? '12px 6px 16px' : '12px 10px 16px'} !important;
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  padding-top: 0 !important;
+  overflow: hidden;
+  padding-top: 10px !important;
+  background: ${({ theme }) =>
+    theme.isDark ? '#001529' : theme.colorBgContainer} !important;
+  transition: all 0.2s ease;
 
   .menu-container {
     flex: 1;
     overflow-y: auto;
-    padding-bottom: 80px; /* evita que el botón se superponga */
-  }
-
-  .btn-logout {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    width: auto;
+    min-height: 0;
+    padding-bottom: 8px;
   }
 `
 
 const Menu = styled(CustomMenu)`
   border-right: 0;
-  background-color: ${({ theme: { isDark, colorBgLayout } }) =>
-    isDark ? '#001529' : colorBgLayout} !important;
-`
+  background-color: transparent !important;
+  width: 100%;
 
-const Layout = styled(CustomLayout)`
-  height: 100vh !important;
+  &.ant-menu-inline-collapsed {
+    .ant-menu-title-content,
+    .ant-menu-submenu-arrow {
+      display: none !important;
+    }
+  }
 `
 
 const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
   const { activityId } = useParams()
   const navigate = useNavigate()
   const navigation = useNavigation()
-  const { isAuthenticated, theme } = useAppContext()
+  const { isAuthenticated, theme, collapsed, setCollapsed } = useAppContext()
   const [searchParams] = useSearchParams()
   const { roleId } = getSessionInfo()
   const isStudentRole = String(roleId) === ROLE_STUDENT_ID
@@ -154,6 +183,12 @@ const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
     }
   }, [activityId, menuOptions])
 
+  useEffect(() => {
+    if (isStudentRole && collapsed) {
+      setCollapsed(false)
+    }
+  }, [collapsed, isStudentRole, setCollapsed])
+
   const handleClickOption = (option: MenuOption) => {
     if (option?.CHILDREN?.length) return
 
@@ -188,7 +223,7 @@ const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
         icon: option.ICON ? <SVGReader svg={option.ICON} /> : undefined,
         onClick: hasChildren ? undefined : () => handleClickOption(option),
         children: hasChildren ? getSubMenu(option?.CHILDREN) : undefined,
-        label: <CustomText>{option.NAME}</CustomText>,
+        label: option.NAME,
       }
     })
   }
@@ -231,26 +266,36 @@ const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
 
   return (
     <>
-      <ConditionalComponent condition={isAuthenticated} fallback={children}>
+      <ConditionalComponent
+        condition={isAuthenticated}
+        fallback={<>{children}</>}
+      >
         <ThemeTransitionLayout>
           <CustomSpin
             tip={'Cargando...'}
             spinning={navigation.state === 'loading'}
           >
-            <Layout hasSider>
-              <Sider width={240} theme={theme}>
-                <LogoWrapper>
-                  <CustomRow justify={'center'} style={{ height: '100px' }}>
-                    <LogoContainer>
-                      <img src={'/assets/logo.png'} />
-                    </LogoContainer>
-                  </CustomRow>
+            <Shell>
+              <Sider
+                $collapsed={!isStudentRole && collapsed}
+                collapsible={!isStudentRole}
+                collapsed={!isStudentRole ? collapsed : false}
+                collapsedWidth={88}
+                trigger={null}
+                width={256}
+                theme={theme}
+              >
+                <LogoWrapper $collapsed={!isStudentRole && collapsed}>
+                  <LogoContainer $collapsed={!isStudentRole && collapsed}>
+                    <img src={'/assets/logo.png'} />
+                  </LogoContainer>
                   <CustomDivider />
                 </LogoWrapper>
                 <div className="menu-container">
                   <Menu
                     mode={'inline'}
-                    openKeys={isStudentRole ? undefined : openKeys}
+                    inlineCollapsed={!isStudentRole ? collapsed : false}
+                    openKeys={isStudentRole || collapsed ? undefined : openKeys}
                     selectedKeys={selectedKeys}
                     items={items}
                     onOpenChange={isStudentRole ? undefined : handleOpenChange}
@@ -258,17 +303,12 @@ const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
                 </div>
               </Sider>
               <BodyContainer>
-                <CustomLayout>
-                  <MainHeader />
-
-                  <CustomLayout style={{ padding: '0 24px 24px' }}>
-                    <CustomRow width={'100%'} justify={'center'}>
-                      <Content>{children}</Content>
-                    </CustomRow>
-                  </CustomLayout>
-                </CustomLayout>
+                <MainHeader />
+                <Viewport>
+                  <Content>{children}</Content>
+                </Viewport>
               </BodyContainer>
-            </Layout>
+            </Shell>
           </CustomSpin>
         </ThemeTransitionLayout>
       </ConditionalComponent>

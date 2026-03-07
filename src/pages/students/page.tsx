@@ -18,11 +18,13 @@ import { AdvancedCondition } from 'src/types/general'
 import { useGetMultiCatalogList } from 'src/hooks/use-get-multi-catalog-list'
 import { useGetCatalog } from 'src/hooks/use-get-catalog'
 import ModuleSummary from 'src/components/ModuleSummary'
+import { ColumnMapValue } from 'src/components/custom/CustomTable'
 
 const StudentsPage: React.FC = () => {
   const [searchKey, setSearchKey] = useState('')
   const [pagination, setPagination] = useState({ page: 1, size: 10 })
   const [status] = useGetCatalog('ID_LIST_STUDENT_STATES')
+  const [careesList] = useGetCatalog('ID_LIST_CAREERS')
   const {
     students,
     summary,
@@ -175,22 +177,50 @@ const StudentsPage: React.FC = () => {
     },
   ]
 
+  const columnsMap: Partial<Record<keyof Student, ColumnMapValue<Student>>> = {
+    NAME: {
+      header: 'Becario',
+      render: (_, record) => `${record.NAME} ${record.LAST_NAME}`,
+    },
+    IDENTITY_DOCUMENT: {
+      header: 'Doc. Identidad',
+      render: (value: string) => formatter({ value, format: 'document' }),
+    },
+    UNIVERSITY: 'Institución',
+    CAREER: {
+      header: 'Carrera',
+      render: (value: string) => {
+        const item = careesList?.find((item) => item.VALUE === value)
+
+        if (item?.VALUE) {
+          return item.LABEL
+        }
+        return 'Por definir'
+      },
+    },
+    ACADEMIC_AVERAGE: 'índice',
+    HOURS_COMPLETED: {
+      header: 'Horas de Servicio',
+      render: (_, record) =>
+        `${record.HOURS_COMPLETED}/${record.HOURS_REQUIRED}`,
+    },
+    SCHOLARSHIP_STATUS: {
+      header: 'Estado',
+      render: (value: string) =>
+        status.find((item) => item.VALUE === value)?.LABEL,
+    },
+  }
+
   const filter = <>Filtros</>
 
   return (
     <>
       <CustomSpin spinning={isPending}>
-        <ModuleSummary
-          total={metadata.totalRows}
-          dataSource={summaryData}
-          // title={
-          //   <CustomDivider>
-          //     <CustomText strong>Resumen de becarios</CustomText>
-          //   </CustomDivider>
-          // }
-        />
+        <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
         <CustomDivider />
         <SmartTable
+          exportable
+          columnsMap={columnsMap}
           filter={filter}
           dataSource={students}
           columns={columns}

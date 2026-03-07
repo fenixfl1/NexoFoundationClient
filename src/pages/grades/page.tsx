@@ -14,6 +14,7 @@ import CustomAlert from 'src/components/custom/CustomAlert'
 import CustomSpin from 'src/components/custom/CustomSpin'
 import CustomBadge from 'src/components/custom/CustomBadge'
 import CustomDrawer from 'src/components/custom/CustomDrawer'
+import ConditionalComponent from 'src/components/ConditionalComponent'
 import { ColumnsType } from 'antd/lib/table'
 import { useGradesStore } from 'src/store/grades.store'
 import { useGetTermPaginationMutation } from 'src/services/grades/useGetTermPaginationMutation'
@@ -192,27 +193,29 @@ const GradesPage: React.FC = () => {
                 Ver
               </CustomButton>
             </CustomTooltip>
-            <CustomTooltip title="Editar">
-              <CustomButton
-                type="link"
-                onClick={async () => {
-                  setEditing(record)
-                  const courses = await fetchCourses(record.TERM_ID)
-                  setInitialForm({
-                    ...record,
-                    COURSES: courses,
-                  })
-                  setModalOpen(true)
-                }}
-              >
-                Editar
-              </CustomButton>
-            </CustomTooltip>
+            {!isStudentRole ? (
+              <CustomTooltip title="Editar">
+                <CustomButton
+                  type="link"
+                  onClick={async () => {
+                    setEditing(record)
+                    const courses = await fetchCourses(record.TERM_ID)
+                    setInitialForm({
+                      ...record,
+                      COURSES: courses,
+                    })
+                    setModalOpen(true)
+                  }}
+                >
+                  Editar
+                </CustomButton>
+              </CustomTooltip>
+            ) : null}
           </CustomSpace>
         ),
       },
     ],
-    []
+    [isStudentRole]
   )
 
   const detailCourses = detail?.COURSES ?? []
@@ -228,22 +231,25 @@ const GradesPage: React.FC = () => {
             </CustomText>
           </CustomCol>
           <CustomCol>
-            <CustomButton
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                form.resetFields()
-                setEditing(undefined)
-                setModalOpen(true)
-              }}
-            >
-              Nuevo cuatrimestre
-            </CustomButton>
+            <ConditionalComponent condition={!isStudentRole}>
+              <CustomButton
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  form.resetFields()
+                  setEditing(undefined)
+                  setModalOpen(true)
+                }}
+              >
+                Nuevo cuatrimestre
+              </CustomButton>
+            </ConditionalComponent>
           </CustomCol>
         </CustomRow>
         <CustomDivider />
 
         <SmartTable
+      exportable
           rowKey="TERM_ID"
           dataSource={terms}
           columns={columns}

@@ -6,8 +6,8 @@ const today = dayjs()
 export const requestsMock: RequestItem[] = [
   {
     REQUEST_ID: 9001,
-    STUDENT_NAME: 'Isabella',
-    STUDENT_LAST_NAME: 'González',
+    NAME: 'Isabella',
+    LAST_NAME: 'González',
     IDENTITY_DOCUMENT: '40210458971',
     UNIVERSITY: 'PUCMM',
     CAREER: 'Ingeniería Civil',
@@ -23,8 +23,8 @@ export const requestsMock: RequestItem[] = [
   },
   {
     REQUEST_ID: 9002,
-    STUDENT_NAME: 'Andrés',
-    STUDENT_LAST_NAME: 'Peralta',
+    NAME: 'Andrés',
+    LAST_NAME: 'Peralta',
     IDENTITY_DOCUMENT: '03100245876',
     UNIVERSITY: 'INTEC',
     CAREER: 'Economía',
@@ -38,8 +38,8 @@ export const requestsMock: RequestItem[] = [
   },
   {
     REQUEST_ID: 9003,
-    STUDENT_NAME: 'Mariela',
-    STUDENT_LAST_NAME: 'Torres',
+    NAME: 'Mariela',
+    LAST_NAME: 'Torres',
     IDENTITY_DOCUMENT: '04800587123',
     UNIVERSITY: 'UASD',
     CAREER: 'Psicología',
@@ -52,8 +52,8 @@ export const requestsMock: RequestItem[] = [
   },
   {
     REQUEST_ID: 9004,
-    STUDENT_NAME: 'Luis',
-    STUDENT_LAST_NAME: 'Matos',
+    NAME: 'Luis',
+    LAST_NAME: 'Matos',
     IDENTITY_DOCUMENT: '02800112345',
     UNIVERSITY: 'ITLA',
     CAREER: 'Desarrollo de Software',
@@ -68,8 +68,8 @@ export const requestsMock: RequestItem[] = [
   },
   {
     REQUEST_ID: 9005,
-    STUDENT_NAME: 'Eva',
-    STUDENT_LAST_NAME: 'Rodríguez',
+    NAME: 'Eva',
+    LAST_NAME: 'Rodríguez',
     IDENTITY_DOCUMENT: '40220774123',
     UNIVERSITY: 'UNIBE',
     CAREER: 'Medicina',

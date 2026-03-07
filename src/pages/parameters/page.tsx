@@ -125,6 +125,7 @@ const ParameterPage: React.FC = () => {
   return (
     <>
       <SmartTable
+      exportable
         form={form}
         rowKey="PARAMETER_ID"
         loading={isPending || isUpdatePending}

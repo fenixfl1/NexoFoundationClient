@@ -61,6 +61,7 @@ const SmartTable: React.FC<SmartTableProps> = ({
   createText = 'Crear',
   dataSource,
   expandable,
+  exportable = false,
   exportInitialValues,
   extra,
   filter,
@@ -80,11 +81,6 @@ const SmartTable: React.FC<SmartTableProps> = ({
   showStates = true,
 }) => {
   const { theme } = useAppContext()
-
-  React.useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log({ metadata })
-  }, [metadata])
 
   const actions: ColumnsType<unknown> = [
     {
@@ -154,6 +150,95 @@ const SmartTable: React.FC<SmartTableProps> = ({
     return arr
   }, [_columns, showActions])
 
+  const resolvedColumnsMap = useMemo<ColumnsMap | undefined>(() => {
+    if (columnsMap && Object.keys(columnsMap).length) {
+      return columnsMap
+    }
+
+    if (!exportable || !_columns?.length) {
+      return undefined
+    }
+
+    const autoMap: ColumnsMap = {}
+    const normalizeToken = (value: unknown) =>
+      String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+
+    const isActionColumn = (column: any) => {
+      const key = normalizeToken(column?.key)
+      const dataIndex = normalizeToken(
+        Array.isArray(column?.dataIndex)
+          ? column.dataIndex.join('.')
+          : column?.dataIndex
+      )
+      const title =
+        typeof column?.title === 'string'
+          ? normalizeToken(column.title)
+          : normalizeToken('')
+
+      return (
+        ['action', 'actions', 'accion', 'acciones'].includes(key) ||
+        ['action', 'actions', 'accion', 'acciones'].includes(dataIndex) ||
+        ['action', 'actions', 'accion', 'acciones'].includes(title)
+      )
+    }
+
+    const hasStateLikeColumn = _columns.some((column: any) => {
+      const key = normalizeToken(column?.key)
+      const dataIndex = normalizeToken(
+        Array.isArray(column?.dataIndex)
+          ? column.dataIndex.join('.')
+          : column?.dataIndex
+      )
+      const title =
+        typeof column?.title === 'string'
+          ? normalizeToken(column.title)
+          : normalizeToken('')
+
+      return key === 'state' || dataIndex === 'state' || title === 'estado'
+    })
+
+    const addColumn = (column: any) => {
+      if (!column) return
+
+      if (Array.isArray(column.children) && column.children.length) {
+        column.children.forEach(addColumn)
+        return
+      }
+
+      if (isActionColumn(column)) return
+
+      const dataIndex = Array.isArray(column.dataIndex)
+        ? column.dataIndex.join('.')
+        : column.dataIndex
+
+      const key = String(dataIndex ?? column.key ?? '').trim()
+      if (!key || key === 'ACTIONS') return
+
+      const title =
+        typeof column.title === 'string' && column.title.trim()
+          ? column.title.trim()
+          : key.replace(/_/g, ' ')
+
+      autoMap[key] = title
+    }
+
+    _columns.forEach(addColumn)
+
+    if (showStates && !autoMap['STATE'] && !hasStateLikeColumn) {
+      autoMap['STATE'] = {
+        header: 'Estado',
+        render: (value: unknown) => (value === 'A' ? 'Activo' : 'Inactivo'),
+      }
+    }
+
+    return Object.keys(autoMap).length ? autoMap : undefined
+  }, [columnsMap, exportable, _columns, showStates])
+
   return (
     <>
       <CustomSpin spinning={loading}>
@@ -217,7 +302,8 @@ const SmartTable: React.FC<SmartTableProps> = ({
                 ...getTablePagination(metadata),
                 showSizeChanger: true,
               }}
-              columnsMap={columnsMap}
+              columnsMap={resolvedColumnsMap}
+              exportable={exportable}
               bordered={bordered}
               exportInitialValues={exportInitialValues}
               rowClassName={(record) =>

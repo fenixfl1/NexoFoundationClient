@@ -7,6 +7,7 @@ import CustomFormItem from 'src/components/custom/CustomFormItem'
 import CustomRangePicker from 'src/components/custom/CustomRangePicker'
 import CustomRow from 'src/components/custom/CustomRow'
 import CustomSelect from 'src/components/custom/CustomSelect'
+import { ColumnMapValue } from 'src/components/custom/CustomTable'
 import CustomTag from 'src/components/custom/CustomTag'
 import RoleSelector from 'src/components/RoleSelector'
 import SmartTable from 'src/components/SmartTable'
@@ -23,6 +24,11 @@ const initialFilter = {
   FILTER: {
     STATE__IN: ['A'],
   },
+}
+
+const states = {
+  A: 'Activo',
+  I: 'Inactivo',
 }
 
 const Page: React.FC = () => {
@@ -104,6 +110,26 @@ const Page: React.FC = () => {
     },
   ]
 
+  const columnsMap: Partial<Record<keyof Person, ColumnMapValue<Person>>> = {
+    PERSON_ID: 'Código',
+    NAME: 'Nombre',
+    LAST_NAME: 'Apellido',
+    IDENTITY_DOCUMENT: {
+      header: 'Doc. Identidad',
+      render: (value: string) => formatter({ value, format: 'document' }),
+    },
+    PHONE: {
+      header: 'Teléfono',
+      render: (value: string) => formatter({ value, format: 'phone' }),
+    },
+    EMAIL: 'Correo',
+    ROLE_NAME: 'Rol',
+    STATE: {
+      header: 'Estado',
+      render: (value: string) => states[value],
+    },
+  }
+
   const filter = (
     <CustomRow justify={'space-between'}>
       <CustomCol {...defaultBreakpoints}>
@@ -137,6 +163,8 @@ const Page: React.FC = () => {
 
   return (
     <SmartTable
+      columnsMap={columnsMap}
+      exportable
       columns={columns}
       dataSource={peopleList}
       filter={filter}

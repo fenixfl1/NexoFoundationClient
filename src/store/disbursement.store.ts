@@ -14,7 +14,7 @@ const defaultMetadata: Metadata = {
 interface UseDisbursementStore {
   disbursements: Disbursement[]
   metadata: Metadata
-  summary: Record<string, number>
+  summary: Record<string, string | number>
   setDisbursements: (payload: ReturnPayload<Disbursement>) => void
 }
 

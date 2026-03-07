@@ -241,6 +241,7 @@ const ActivitiesPage: React.FC = () => {
         <CustomDivider />
 
         <SmartTable
+      exportable
           rowKey="ACTIVITY_ID"
           dataSource={activities}
           columns={columns}
