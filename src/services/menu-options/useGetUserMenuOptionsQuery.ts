@@ -10,8 +10,10 @@ export function useGetUserMenuOptionsQuery() {
   const { username } = getSessionInfo()
 
   return useQuery({
-    initialData: [],
-    enabled: !menuOptions.length && !!username,
+    initialData: menuOptions.length ? menuOptions : [],
+    enabled: !!username,
+    refetchOnMount: 'always',
+    staleTime: 0,
     queryKey: ['menu-options', 'get-user-menu-options', username],
     queryFn: async () => {
       const {

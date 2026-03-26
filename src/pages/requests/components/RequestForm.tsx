@@ -19,8 +19,6 @@ import {
   formItemLayout,
   labelColFullWidth,
 } from 'src/config/breakpoints'
-import { useGetPaginatedPeopleMutation } from 'src/services/people/useGetPaginatedPeopleMutation'
-import { usePeopleStore } from 'src/store/people.store'
 import useDebounce from 'src/hooks/use-debounce'
 import { AdvancedCondition } from 'src/types/general'
 import { useGetStudentPaginationMutation } from 'src/services/students/useGetStudentPaginationMutation'
@@ -37,6 +35,7 @@ import { useErrorHandler } from 'src/hooks/use-error-handler'
 import dayjs from 'dayjs'
 import ConditionalComponent from 'src/components/ConditionalComponent'
 import { getSessionInfo } from 'src/lib/session'
+import CustomPersonSelector from 'src/components/custom/CustomPersonSelector'
 
 interface RequestFormProps {
   onCancel?: () => void
@@ -68,16 +67,10 @@ const RequestForm: React.FC<RequestFormProps> = ({
   const notification = useAppNotification()
   const [errorHandler] = useErrorHandler()
 
-  const [personSearch, setPersonSearch] = useState('')
   const [studentSearch, setStudentSearch] = useState('')
-  const debouncePerson = useDebounce(personSearch)
   const debounceStudent = useDebounce(studentSearch)
 
-  const { peopleList } = usePeopleStore()
   const { students } = useStudentStore()
-
-  const { mutate: getPeople, isPending: isGetPeoplePending } =
-    useGetPaginatedPeopleMutation()
   const { mutate: getStudents, isPending: isGetStudentsPending } =
     useGetStudentPaginationMutation()
   const { mutateAsync: createRequest, isPending: isCreateRequestPending } =
@@ -94,26 +87,6 @@ const RequestForm: React.FC<RequestFormProps> = ({
       ),
     []
   )
-
-  const handlePeopleSearch = useCallback(() => {
-    const condition: AdvancedCondition[] = [
-      {
-        value: 'A',
-        operator: '=',
-        field: 'STATE',
-      },
-    ]
-
-    if (debouncePerson) {
-      condition.push({
-        value: debouncePerson,
-        operator: 'LIKE',
-        field: 'FILTER',
-      })
-    }
-
-    getPeople({ page: 1, size: 20, condition })
-  }, [debouncePerson, getPeople])
 
   const handleStudentSearch = useCallback(() => {
     const condition: AdvancedCondition[] = [
@@ -195,7 +168,6 @@ const RequestForm: React.FC<RequestFormProps> = ({
       }
 
       form.resetFields()
-      setPersonSearch('')
       setStudentSearch('')
       onCancel?.()
       onSuccess?.()
@@ -206,15 +178,13 @@ const RequestForm: React.FC<RequestFormProps> = ({
 
   useEffect(() => {
     if (open) {
-      handlePeopleSearch()
       handleStudentSearch()
     }
-  }, [open, handlePeopleSearch, handleStudentSearch])
+  }, [open, handleStudentSearch])
 
   useEffect(() => {
     if (!open) {
       form.resetFields()
-      setPersonSearch('')
       setStudentSearch('')
     }
   }, [open, form])
@@ -228,17 +198,6 @@ const RequestForm: React.FC<RequestFormProps> = ({
         : null,
     })
   }, [open, request])
-
-  const personOptions = useMemo(
-    () =>
-      peopleList
-        .filter((item) => item?.ROLE_NAME?.toLowerCase() === 'estudiante')
-        .map((person) => ({
-          label: `${person.NAME} ${person.LAST_NAME} `,
-          value: person.PERSON_ID,
-        })),
-    [peopleList]
-  )
 
   const studentOptions = useMemo(
     () =>
@@ -277,16 +236,11 @@ const RequestForm: React.FC<RequestFormProps> = ({
                 label={'Solicitante'}
                 name={'PERSON_ID'}
                 rules={[{ required: true }]}
-                initialValue={getSessionInfo()?.personId}
               >
-                <CustomSelect
+                <CustomPersonSelector
                   disabled={isStudent}
                   placeholder={'Seleccionar persona'}
-                  options={personOptions}
-                  loading={isGetPeoplePending}
-                  onSearch={setPersonSearch}
                   onChange={handlePersonSelect}
-                  allowClear
                 />
               </CustomFormItem>
             </CustomCol>

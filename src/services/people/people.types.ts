@@ -24,6 +24,7 @@ export interface Person {
   REFERENCES: Reference[]
   STUDENT_DOCUMENTS?: StudentDocument[]
   USER_ID: number
+  ROLE_ID: number
 }
 
 export interface Reference {
