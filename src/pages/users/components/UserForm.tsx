@@ -142,8 +142,8 @@ const UserForm: React.FC<UserFormProps> = ({ open, onClose }) => {
                     loading={isGetStaffPending}
                     placeholder={'Seleccionar empleado'}
                     options={staffList.map((item) => ({
-                      label: `${item.NAME} ${item.LAST_NAME}`,
-                      value: item.STAFF_ID,
+                      label: item?.['FULL_NAME'],
+                      value: item['USER_ID'],
                     }))}
                   />
                 </CustomFormItem>
