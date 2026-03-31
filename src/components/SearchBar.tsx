@@ -71,13 +71,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
               placeholder={searchPlaceholder}
               onChange={(e) => onSearch?.(e.target.value)}
             />
-            <CustomButton
-              icon={<PlusOutlined />}
-              type={'primary'}
-              onClick={onCreate}
-            >
-              {createText}
-            </CustomButton>
+            <ConditionalComponent condition={typeof onCreate === 'function'}>
+              <CustomButton
+                icon={<PlusOutlined />}
+                type={'primary'}
+                onClick={onCreate}
+              >
+                {createText}
+              </CustomButton>
+            </ConditionalComponent>
           </CustomRow>
         </CustomCol>
       </CustomRow>

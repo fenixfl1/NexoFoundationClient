@@ -56,10 +56,10 @@ const UserPage: React.FC = () => {
         <CustomCard style={{ padding: 15 }}>
           <SearchBar
             form={form}
-            createText={'Nuevo Usuario'}
+            // createText={'Nuevo Usuario'}
             searchPlaceholder={'Buscar usuarios...'}
             onSearch={setSearchKey}
-            onCreate={toggleModalState}
+            // onCreate={toggleModalState}
             filterContent={<>Plantilla de filtro</>}
           />
 
