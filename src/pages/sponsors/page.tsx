@@ -13,9 +13,6 @@ import { ColumnsType } from 'antd/lib/table'
 import { useSponsorStore } from 'src/store/sponsor.store'
 import { Sponsor } from 'src/services/sponsors/sponsor.types'
 import { useGetSponsorPaginationMutation } from 'src/services/sponsors/useGetSponsorPaginationMutation'
-import { useUpdateSponsorMutation } from 'src/services/sponsors/useUpdateSponsorMutation'
-import { useCustomModal } from 'src/hooks/use-custom-modal'
-import { useErrorHandler } from 'src/hooks/use-error-handler'
 import useDebounce from 'src/hooks/use-debounce'
 import { AdvancedCondition } from 'src/types/general'
 import { getConditionFromForm } from 'src/utils/get-condition-from'
@@ -40,13 +37,9 @@ const SponsorsPage: React.FC = () => {
   const [form] = Form.useForm()
   const [searchKey, setSearchKey] = useState('')
   const debounce = useDebounce(searchKey)
-  const { confirmModal } = useCustomModal()
-  const [errorHandler] = useErrorHandler()
 
   const { sponsors, metadata } = useSponsorStore()
   const { mutate: getSponsors, isPending } = useGetSponsorPaginationMutation()
-  const { mutateAsync: updateSponsor, isPending: isUpdatePending } =
-    useUpdateSponsorMutation()
 
   const handleSearch = useCallback(
     (page = metadata.currentPage, size = metadata.pageSize) => {
@@ -74,26 +67,6 @@ const SponsorsPage: React.FC = () => {
   )
 
   useEffect(handleSearch, [handleSearch])
-
-  const handleToggleState = (record: Sponsor) => {
-    confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
-        record.STATE === 'A' ? 'desactivar' : 'activar'
-      } el patrocinador "${record.NAME}"?`,
-      onOk: async () => {
-        try {
-          await updateSponsor({
-            SPONSOR_ID: record.SPONSOR_ID,
-            STATE: record.STATE === 'A' ? 'I' : 'A',
-          } as Sponsor)
-          handleSearch()
-        } catch (error) {
-          errorHandler(error)
-        }
-      },
-    })
-  }
 
   const columns: ColumnsType<Sponsor> = useMemo(
     () => [
@@ -164,17 +137,17 @@ const SponsorsPage: React.FC = () => {
     <>
       <CustomDivider />
       <SmartTable
-      exportable
+        exportable
         form={form}
         rowKey="SPONSOR_ID"
-        loading={isPending || isUpdatePending}
+        loading={isPending}
         columns={columns}
         dataSource={sponsors}
         metadata={metadata}
         searchPlaceholder={'Buscar patrocinadores...'}
         onChange={handleSearch}
         onSearch={setSearchKey}
-        onUpdate={handleToggleState}
+        showActions={false}
         filter={filter}
         initialFilter={sponsorInitialFilter}
       />

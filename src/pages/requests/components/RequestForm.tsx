@@ -63,6 +63,7 @@ const RequestForm: React.FC<RequestFormProps> = ({
   request,
 }) => {
   const [form] = Form.useForm<RequestFormValues>()
+  const isEditing = Boolean(request?.REQUEST_ID)
 
   const notification = useAppNotification()
   const [errorHandler] = useErrorHandler()
@@ -145,21 +146,30 @@ const RequestForm: React.FC<RequestFormProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      const payload: CreateRequestPayload = {
-        ...values,
-        STUDENT_ID: values.STUDENT_ID ?? null,
-        NEXT_APPOINTMENT: values.NEXT_APPOINTMENT
-          ? values.NEXT_APPOINTMENT.toISOString()
-          : null,
-      }
 
       if (request?.REQUEST_ID) {
+        const payload = {
+          STATUS: values.STATUS,
+          NEXT_APPOINTMENT: values.NEXT_APPOINTMENT
+            ? values.NEXT_APPOINTMENT.toISOString()
+            : null,
+          NOTES: values.NOTES ?? null,
+        }
+
         await updateRequest({ ...payload, REQUEST_ID: request.REQUEST_ID })
         notification({
           message: 'Solicitud actualizada',
           description: 'La solicitud se actualizó correctamente.',
         })
       } else {
+        const payload: CreateRequestPayload = {
+          ...values,
+          STUDENT_ID: values.STUDENT_ID ?? null,
+          NEXT_APPOINTMENT: values.NEXT_APPOINTMENT
+            ? values.NEXT_APPOINTMENT.toISOString()
+            : null,
+        }
+
         await createRequest(payload)
         notification({
           message: 'Solicitud registrada',
@@ -231,19 +241,21 @@ const RequestForm: React.FC<RequestFormProps> = ({
           initialValues={{ STATUS: 'P' }}
         >
           <CustomRow justify={'start'}>
-            <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem
-                label={'Solicitante'}
-                name={'PERSON_ID'}
-                rules={[{ required: true }]}
-              >
-                <CustomPersonSelector
-                  disabled={isStudent}
-                  placeholder={'Seleccionar persona'}
-                  onChange={handlePersonSelect}
-                />
-              </CustomFormItem>
-            </CustomCol>
+            <ConditionalComponent condition={!isEditing}>
+              <CustomCol {...defaultBreakpoints}>
+                <CustomFormItem
+                  label={'Solicitante'}
+                  name={'PERSON_ID'}
+                  rules={[{ required: true }]}
+                >
+                  <CustomPersonSelector
+                    disabled={isStudent}
+                    placeholder={'Seleccionar persona'}
+                    onChange={handlePersonSelect}
+                  />
+                </CustomFormItem>
+              </CustomCol>
+            </ConditionalComponent>
             <ConditionalComponent condition={false}>
               <CustomCol {...defaultBreakpoints}>
                 <CustomFormItem
@@ -262,18 +274,20 @@ const RequestForm: React.FC<RequestFormProps> = ({
               </CustomCol>
             </ConditionalComponent>
 
-            <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem
-                label={'Tipo de solicitud'}
-                name={'REQUEST_TYPE'}
-                rules={[{ required: true }]}
-              >
-                <CatalogSelector
-                  catalog={'ID_LIST_REQUEST_TYPES'}
-                  placeholder={'Seleccionar tipo'}
-                />
-              </CustomFormItem>
-            </CustomCol>
+            <ConditionalComponent condition={!isEditing}>
+              <CustomCol {...defaultBreakpoints}>
+                <CustomFormItem
+                  label={'Tipo de solicitud'}
+                  name={'REQUEST_TYPE'}
+                  rules={[{ required: true }]}
+                >
+                  <CatalogSelector
+                    catalog={'ID_LIST_REQUEST_TYPES'}
+                    placeholder={'Seleccionar tipo'}
+                  />
+                </CustomFormItem>
+              </CustomCol>
+            </ConditionalComponent>
 
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem label={'Estado'} name={'STATUS'}>
@@ -281,14 +295,16 @@ const RequestForm: React.FC<RequestFormProps> = ({
               </CustomFormItem>
             </CustomCol>
 
-            <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem
-                label={'Coordinador'}
-                name={'ASSIGNED_COORDINATOR'}
-              >
-                <CustomInput placeholder={'Nombre del coordinador'} />
-              </CustomFormItem>
-            </CustomCol>
+            <ConditionalComponent condition={!isEditing}>
+              <CustomCol {...defaultBreakpoints}>
+                <CustomFormItem
+                  label={'Coordinador'}
+                  name={'ASSIGNED_COORDINATOR'}
+                >
+                  <CustomInput placeholder={'Nombre del coordinador'} />
+                </CustomFormItem>
+              </CustomCol>
+            </ConditionalComponent>
 
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem label={'Próxima cita'} name={'NEXT_APPOINTMENT'}>
@@ -296,14 +312,16 @@ const RequestForm: React.FC<RequestFormProps> = ({
               </CustomFormItem>
             </CustomCol>
 
-            <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Cohorte'} name={'COHORT'}>
-                <CatalogSelector
-                  catalog={'ID_LIST_COHORTS'}
-                  placeholder={'Seleccionar cohorte'}
-                />
-              </CustomFormItem>
-            </CustomCol>
+            <ConditionalComponent condition={!isEditing}>
+              <CustomCol {...defaultBreakpoints}>
+                <CustomFormItem label={'Cohorte'} name={'COHORT'}>
+                  <CatalogSelector
+                    catalog={'ID_LIST_COHORTS'}
+                    placeholder={'Seleccionar cohorte'}
+                  />
+                </CustomFormItem>
+              </CustomCol>
+            </ConditionalComponent>
 
             <CustomCol xs={24}>
               <CustomFormItem

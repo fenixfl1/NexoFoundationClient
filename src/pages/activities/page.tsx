@@ -16,6 +16,7 @@ import { CustomText, CustomTitle } from 'src/components/custom/CustomParagraph'
 import CustomTag from 'src/components/custom/CustomTag'
 import CustomTooltip from 'src/components/custom/CustomTooltip'
 import CustomSpin from 'src/components/custom/CustomSpin'
+import ConditionalComponent from 'src/components/ConditionalComponent'
 import { Activity } from 'src/services/activities/activity.types'
 import { useActivitiesStore } from 'src/store/activities.store'
 import { useGetActivityPaginationMutation } from 'src/services/activities/useGetActivityPaginationMutation'
@@ -31,6 +32,8 @@ import formatter from 'src/utils/formatter'
 import ActivityForm, { ActivityFormValues } from './components/ActivityForm'
 import EnrollmentForm from './components/EnrollmentForm'
 import CustomBadge from 'src/components/custom/CustomBadge'
+import { getSessionInfo } from 'src/lib/session'
+import { ROLE_STUDENT_ID } from 'src/utils/role-path'
 
 const statusTag: Record<string, { color: string; label: string }> = {
   planned: { color: 'blue', label: 'Planificada' },
@@ -41,6 +44,8 @@ const statusTag: Record<string, { color: string; label: string }> = {
 const ActivitiesPage: React.FC = () => {
   const { activities, metadata } = useActivitiesStore()
   const { students } = useStudentStore()
+  const { roleId } = getSessionInfo()
+  const isStudentRole = String(roleId) === ROLE_STUDENT_ID
 
   const { mutate: getActivities, isPending } =
     useGetActivityPaginationMutation()
@@ -174,17 +179,19 @@ const ActivitiesPage: React.FC = () => {
         align: 'center',
         render: (_, record) => (
           <CustomSpace size={8}>
-            <CustomTooltip title="Editar">
-              <CustomButton
-                type="link"
-                onClick={() => {
-                  setEditing(record)
-                  setModalOpen(true)
-                }}
-              >
-                Editar
-              </CustomButton>
-            </CustomTooltip>
+            <ConditionalComponent condition={!isStudentRole}>
+              <CustomTooltip title="Editar">
+                <CustomButton
+                  type="link"
+                  onClick={() => {
+                    setEditing(record)
+                    setModalOpen(true)
+                  }}
+                >
+                  Editar
+                </CustomButton>
+              </CustomTooltip>
+            </ConditionalComponent>
             <CustomTooltip title="Inscribir becario">
               <CustomButton
                 type="link"
@@ -195,23 +202,25 @@ const ActivitiesPage: React.FC = () => {
                 }}
               />
             </CustomTooltip>
-            <CustomTooltip title="Marcar completada">
-              <CustomButton
-                type="link"
-                icon={<FileTextOutlined />}
-                onClick={async () => {
-                  await updateActivity({
-                    ACTIVITY_ID: record.ACTIVITY_ID,
-                    STATUS: 'completed',
-                  } as never)
-                }}
-              />
-            </CustomTooltip>
+            <ConditionalComponent condition={!isStudentRole}>
+              <CustomTooltip title="Marcar completada">
+                <CustomButton
+                  type="link"
+                  icon={<FileTextOutlined />}
+                  onClick={async () => {
+                    await updateActivity({
+                      ACTIVITY_ID: record.ACTIVITY_ID,
+                      STATUS: 'completed',
+                    } as never)
+                  }}
+                />
+              </CustomTooltip>
+            </ConditionalComponent>
           </CustomSpace>
         ),
       },
     ],
-    [updateActivity]
+    [isStudentRole, updateActivity]
   )
 
   return (
@@ -224,24 +233,26 @@ const ActivitiesPage: React.FC = () => {
               Gestiona jornadas, inscribe becarios y acredita horas completadas.
             </CustomText>
           </CustomCol>
-          <CustomCol>
-            <CustomButton
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setEditing(undefined)
-                setModalOpen(true)
-              }}
-            >
-              Nueva actividad
-            </CustomButton>
-          </CustomCol>
+          <ConditionalComponent condition={!isStudentRole}>
+            <CustomCol>
+              <CustomButton
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setEditing(undefined)
+                  setModalOpen(true)
+                }}
+              >
+                Nueva actividad
+              </CustomButton>
+            </CustomCol>
+          </ConditionalComponent>
         </CustomRow>
 
         <CustomDivider />
 
         <SmartTable
-      exportable
+          exportable
           rowKey="ACTIVITY_ID"
           dataSource={activities}
           columns={columns}

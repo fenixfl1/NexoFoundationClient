@@ -12,7 +12,25 @@ export interface ReportFilterDefinition {
   label: string
   type: ReportFilterType
   multiple?: boolean
+  catalog?: string
   options?: ReportFilterOption[]
+}
+
+export type ReportColumnFormat =
+  | 'text'
+  | 'date'
+  | 'datetime'
+  | 'currency'
+  | 'percentage'
+  | 'number'
+  | 'document'
+
+export interface ReportColumnDefinition {
+  key: string
+  label: string
+  format?: ReportColumnFormat
+  catalog?: string
+  hidden?: boolean
 }
 
 export interface ReportCatalogItem {
@@ -21,6 +39,8 @@ export interface ReportCatalogItem {
   DESCRIPTION: string
   MODULE: string
   FILTERS: ReportFilterDefinition[]
+  COLUMNS: ReportColumnDefinition[]
+  SUMMARY_LABELS?: Record<string, string>
 }
 
 export type ReportRow = Record<string, unknown>
@@ -58,4 +78,3 @@ export interface ReportRunResponse {
     }
   }
 }
-

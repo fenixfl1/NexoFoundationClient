@@ -40,11 +40,24 @@ const RequestsPage: React.FC = () => {
   const { mutate: getRequests, isPending } = useGetRequestPaginationMutation()
   useGetMultiCatalogList()
 
-  const statusConfig = {}
-
   const [status] = useGetCatalog('ID_LIST_REQUEST_STATUS')
   const [requestTypes] = useGetCatalog('ID_LIST_REQUEST_TYPES')
   const [careesList] = useGetCatalog('ID_LIST_CAREERS')
+
+  const statusConfig = useMemo(
+    () =>
+      status.reduce<Record<string, { label: string; color: string }>>(
+        (acc, item) => {
+          acc[item.VALUE] = {
+            label: item.LABEL ?? item.VALUE,
+            color: item.EXTRA?.color ?? 'blue',
+          }
+          return acc
+        },
+        {}
+      ),
+    [status]
+  )
 
   const loadRequests = useCallback(
     (page = metadata.currentPage, size = metadata.pageSize) => {

@@ -13,7 +13,7 @@ import CustomDivider from 'src/components/custom/CustomDivider'
 import CustomForm from 'src/components/custom/CustomForm'
 import CustomFormItem from 'src/components/custom/CustomFormItem'
 import CustomInput from 'src/components/custom/CustomInput'
-import { CustomText } from 'src/components/custom/CustomParagraph'
+import { CustomText, CustomTitle } from 'src/components/custom/CustomParagraph'
 import CustomRow from 'src/components/custom/CustomRow'
 import CustomSelect from 'src/components/custom/CustomSelect'
 import CustomSpace from 'src/components/custom/CustomSpace'
@@ -24,13 +24,17 @@ import { useErrorHandler } from 'src/hooks/use-error-handler'
 import { useExportReportMutation } from 'src/services/reports/useExportReportMutation'
 import { useGetReportCatalogQuery } from 'src/services/reports/useGetReportCatalogQuery'
 import {
-  ReportCatalogItem,
+  ReportColumnDefinition,
   ReportFilterDefinition,
 } from 'src/services/reports/report.types'
 import { useRunReportMutation } from 'src/services/reports/useRunReportMutation'
+import { useGetMultiCatalogList } from 'src/hooks/use-get-multi-catalog-list'
+import { useCatalogStore } from 'src/store/catalog.store'
 import { useReportStore } from 'src/store/reports.store'
 import { Metadata } from 'src/types/general'
 import formatter from 'src/utils/formatter'
+import { getSessionInfo } from 'src/lib/session'
+import { ROLE_STUDENT_ID } from 'src/utils/role-path'
 import { getTablePagination } from 'src/utils/table-pagination'
 
 const defaultMetadata: Metadata = {
@@ -70,32 +74,43 @@ const normalizeFilterValue = (value: unknown) => {
   return value ?? undefined
 }
 
-const renderCellValue = (key: string, value: unknown) => {
+type CatalogMaps = Record<string, Record<string, string>>
+
+const renderCellValue = (
+  column: Pick<ReportColumnDefinition, 'key' | 'format' | 'catalog'>,
+  value: unknown,
+  catalogMaps: CatalogMaps = {}
+) => {
   if (value === null || value === undefined || value === '') return '—'
 
-  if (
-    typeof value === 'string' &&
-    /(DATE|_AT|CREATED_AT|UPDATED_AT|START|END)/.test(key)
-  ) {
+  const catalogLabel = column.catalog
+    ? catalogMaps[column.catalog]?.[String(value)]
+    : undefined
+
+  if (catalogLabel) {
+    return catalogLabel
+  }
+
+  if (column.format === 'date' || column.format === 'datetime') {
     try {
       return formatter({
-        value,
-        format: key.includes('AT') ? 'datetime' : 'date',
+        value: value as string,
+        format: column.format,
       })
     } catch {
-      return value
+      return String(value)
     }
   }
 
-  if (typeof value === 'number' && key.includes('PCT')) {
+  if (column.format === 'document') {
+    return formatter({ value: value as string, format: 'document' })
+  }
+
+  if (column.format === 'percentage') {
     return `${value}%`
   }
 
-  if (
-    (typeof value === 'number' ||
-      (typeof value === 'string' && !isNaN(Number(value)))) &&
-    key.includes('AMOUNT')
-  ) {
+  if (column.format === 'currency') {
     return formatter({
       value: Number(value),
       format: 'currency',
@@ -128,7 +143,11 @@ const ReportsPage: React.FC = () => {
     useState<Partial<ExportFormValue>>()
   const { warningNotification } = useCustomNotifications()
   const [errorHandler] = useErrorHandler()
+  const { roleId } = getSessionInfo()
+  const isStudentRole = String(roleId) === ROLE_STUDENT_ID
 
+  useGetMultiCatalogList()
+  const { multiCatalogList } = useCatalogStore()
   const { catalog, rows, metadata, summary } = useReportStore()
   const { isPending: isCatalogPending } = useGetReportCatalogQuery()
   const { mutate: runReport, isPending: isRunPending } = useRunReportMutation()
@@ -139,6 +158,35 @@ const ReportsPage: React.FC = () => {
     () => catalog.find((item) => item.KEY === selectedReportKey),
     [catalog, selectedReportKey]
   )
+
+  const reportOptions = useMemo(() => {
+    const grouped = catalog.reduce<
+      Record<string, { label: string; value: string }[]>
+    >((acc, item) => {
+      const module = item.MODULE || 'General'
+      acc[module] = acc[module] ?? []
+      acc[module].push({ label: item.NAME, value: item.KEY })
+      return acc
+    }, {})
+
+    return Object.entries(grouped).map(([label, options]) => ({
+      label,
+      options,
+    }))
+  }, [catalog])
+
+  const catalogMaps = useMemo<CatalogMaps>(() => {
+    return Object.entries(multiCatalogList ?? {}).reduce<CatalogMaps>(
+      (acc, [key, items]) => {
+        acc[key] = items.reduce<Record<string, string>>((map, item) => {
+          map[item.VALUE] = item.LABEL ?? item.VALUE
+          return map
+        }, {})
+        return acc
+      },
+      {}
+    )
+  }, [multiCatalogList])
 
   useEffect(() => {
     if (!catalog.length || selectedReportKey) return
@@ -227,10 +275,12 @@ const ReportsPage: React.FC = () => {
     () =>
       Object.entries(summary || {}).map(([key, value]) => ({
         key,
-        title: humanizeKey(key),
+        title:
+          selectedReport?.SUMMARY_LABELS?.[key] ??
+          (key === 'TOTAL' ? 'Total' : humanizeKey(key)),
         value: value ?? 0,
       })),
-    [summary]
+    [selectedReport?.SUMMARY_LABELS, summary]
   )
 
   const tableRows = useMemo(
@@ -243,18 +293,22 @@ const ReportsPage: React.FC = () => {
   )
 
   const columns: ColumnsType<Record<string, unknown>> = useMemo(() => {
-    const firstRow = tableRows?.[0]
-    if (!firstRow) return []
+    const reportColumns: ReportColumnDefinition[] = selectedReport?.COLUMNS
+      ?.length
+      ? selectedReport.COLUMNS
+      : Object.keys(tableRows?.[0] ?? {})
+          .filter((key) => !['__ROW_KEY', 'FILTER'].includes(key))
+          .map((key) => ({ key, label: humanizeKey(key) }))
 
-    return Object.keys(firstRow)
-      .filter((key) => key !== '__ROW_KEY')
-      .map((key) => ({
-        dataIndex: key,
-        key,
-        title: humanizeKey(key),
-        render: (value: unknown) => renderCellValue(key, value),
+    return reportColumns
+      .filter((column) => !column.hidden)
+      .map((column) => ({
+        dataIndex: column.key,
+        key: column.key,
+        title: column.label,
+        render: (value: unknown) => renderCellValue(column, value, catalogMaps),
       }))
-  }, [tableRows])
+  }, [catalogMaps, selectedReport?.COLUMNS, tableRows])
 
   const columnsMap = useMemo<ColumnsMap<Record<string, unknown>>>(() => {
     return columns.reduce(
@@ -263,19 +317,24 @@ const ReportsPage: React.FC = () => {
           ? column?.['dataIndex'].join('.')
           : column?.['dataIndex']
         const key = String(dataIndex ?? column.key ?? '').trim()
-        if (!key || key === '__ROW_KEY') return acc
+        if (!key || ['__ROW_KEY', 'FILTER'].includes(key)) return acc
 
         const title =
           typeof column.title === 'string' ? column.title : humanizeKey(key)
         acc[key] = {
           header: title,
-          render: (value) => renderCellValue(key, value),
+          render: (value) => {
+            const column = selectedReport?.COLUMNS?.find(
+              (item) => item.key === key
+            )
+            return renderCellValue(column ?? { key }, value, catalogMaps)
+          },
         }
         return acc
       },
       {} as ColumnsMap<Record<string, unknown>>
     )
-  }, [columns])
+  }, [catalogMaps, columns, selectedReport?.COLUMNS])
 
   const renderFilterField = (filter: ReportFilterDefinition) => {
     if (filter.type === 'date') {
@@ -283,11 +342,20 @@ const ReportsPage: React.FC = () => {
     }
 
     if (filter.type === 'select') {
+      const catalogOptions = filter.catalog
+        ? (multiCatalogList?.[filter.catalog] ?? []).map((item) => ({
+            label: item.LABEL,
+            value: item.VALUE,
+          }))
+        : undefined
+
       return (
         <CustomSelect
           mode={filter.multiple ? 'multiple' : undefined}
           allowClear
-          options={filter.options ?? []}
+          options={
+            catalogOptions?.length ? catalogOptions : (filter.options ?? [])
+          }
           placeholder={filter.label}
         />
       )
@@ -299,18 +367,15 @@ const ReportsPage: React.FC = () => {
   return (
     <CustomSpin spinning={isCatalogPending || isRunPending || isExportPending}>
       <CustomCard>
-        <CustomForm form={form} layout="vertical">
-          <CustomRow gutter={[10, 10]}>
+        <CustomForm form={form} layout={'vertical'}>
+          <CustomRow justify={'start'} gutter={[10, 10]}>
             <CustomCol xs={24} md={8}>
               <CustomFormItem label={'Reporte'}>
                 <CustomSelect
                   placeholder={'Seleccionar reporte'}
                   value={selectedReportKey}
                   onChange={(value) => setSelectedReportKey(value)}
-                  options={catalog.map((item: ReportCatalogItem) => ({
-                    label: item.NAME,
-                    value: item.KEY,
-                  }))}
+                  options={reportOptions}
                 />
               </CustomFormItem>
             </CustomCol>
@@ -327,10 +392,16 @@ const ReportsPage: React.FC = () => {
 
         <CustomRow justify={'space-between'} align={'middle'}>
           <CustomCol xs={24} md={16}>
-            <CustomText type="secondary">
-              {selectedReport?.DESCRIPTION ||
-                'Selecciona un reporte para iniciar.'}
-            </CustomText>
+            <CustomSpace direction="vertical" size={0}>
+              <CustomTitle level={4}>
+                {selectedReport?.NAME ?? 'Reportes'}
+              </CustomTitle>
+              <CustomText type="secondary">
+                {selectedReport?.MODULE ? `${selectedReport.MODULE} · ` : ''}
+                {selectedReport?.DESCRIPTION ||
+                  'Selecciona un reporte para iniciar.'}
+              </CustomText>
+            </CustomSpace>
           </CustomCol>
           <CustomCol xs={24} md={8}>
             <CustomRow justify={'end'} gap={8}>
@@ -340,7 +411,9 @@ const ReportsPage: React.FC = () => {
               >
                 Generar
               </CustomButton>
-              <CustomButton onClick={handleExport}>Exportar</CustomButton>
+              <ConditionalComponent condition={!isStudentRole}>
+                <CustomButton onClick={handleExport}>Exportar</CustomButton>
+              </ConditionalComponent>
             </CustomRow>
           </CustomCol>
         </CustomRow>
@@ -351,7 +424,6 @@ const ReportsPage: React.FC = () => {
           <CustomDivider />
           <ModuleSummary
             dataSource={summaryData}
-            total={metadata?.totalRows}
             title={<CustomDivider>Resumen</CustomDivider>}
           />
         </>

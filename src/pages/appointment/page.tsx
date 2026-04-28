@@ -130,7 +130,8 @@ const Page: React.FC = () => {
     const now = dayjs()
     return sortedAppointments.filter(
       (appointment) =>
-        appointment.STATUS === 'scheduled' && dayjs(appointment.START_AT).isAfter(now)
+        appointment.STATUS === 'scheduled' &&
+        dayjs(appointment.START_AT).isAfter(now)
     )
   }, [sortedAppointments])
 
@@ -201,7 +202,7 @@ const Page: React.FC = () => {
         <ConditionalRender
           condition={!sortedAppointments.length}
           fallback={
-            <>
+            <CustomSpace size={'large'}>
               <ModuleSummary
                 total={metadata.totalRows || sortedAppointments.length}
                 dataSource={summaryData}
@@ -214,7 +215,10 @@ const Page: React.FC = () => {
                       <CustomTitle level={4} style={{ margin: 0 }}>
                         Calendario de citas
                       </CustomTitle>
-                      <CustomButton type="default" onClick={() => setSelectedDate(dayjs())}>
+                      <CustomButton
+                        type="default"
+                        onClick={() => setSelectedDate(dayjs())}
+                      >
                         Ir a hoy
                       </CustomButton>
                     </CustomRow>
@@ -235,10 +239,14 @@ const Page: React.FC = () => {
                       </CustomTitle>
                       {nextAppointment ? (
                         <DetailBlock>
-                          <CustomTag color={statusMeta[nextAppointment.STATUS].color}>
+                          <CustomTag
+                            color={statusMeta[nextAppointment.STATUS].color}
+                          >
                             {statusMeta[nextAppointment.STATUS].label}
                           </CustomTag>
-                          <CustomText strong>{nextAppointment.TITLE}</CustomText>
+                          <CustomText strong>
+                            {nextAppointment.TITLE}
+                          </CustomText>
                           <CustomText>
                             {formatAppointmentDate(nextAppointment.START_AT)}
                           </CustomText>
@@ -253,7 +261,9 @@ const Page: React.FC = () => {
                             </CustomText>
                           ) : null}
                           {nextAppointment.DESCRIPTION ? (
-                            <CustomText>{nextAppointment.DESCRIPTION}</CustomText>
+                            <CustomText>
+                              {nextAppointment.DESCRIPTION}
+                            </CustomText>
                           ) : null}
                         </DetailBlock>
                       ) : (
@@ -272,14 +282,20 @@ const Page: React.FC = () => {
                       <CustomDivider />
                       <CustomList
                         dataSource={selectedAppointments}
-                        locale={{ emptyText: 'No hay citas para la fecha seleccionada.' }}
+                        locale={{
+                          emptyText: 'No hay citas para la fecha seleccionada.',
+                        }}
                         renderItem={(appointment) => (
                           <CustomListItem key={appointment.APPOINTMENT_ID}>
                             <CustomListItemMeta
                               title={
                                 <CustomSpace>
-                                  <CustomText strong>{appointment.TITLE}</CustomText>
-                                  <CustomTag color={statusMeta[appointment.STATUS].color}>
+                                  <CustomText strong>
+                                    {appointment.TITLE}
+                                  </CustomText>
+                                  <CustomTag
+                                    color={statusMeta[appointment.STATUS].color}
+                                  >
                                     {statusMeta[appointment.STATUS].label}
                                   </CustomTag>
                                 </CustomSpace>
@@ -287,7 +303,9 @@ const Page: React.FC = () => {
                               description={
                                 <DetailBlock>
                                   <CustomText>
-                                    {formatAppointmentDate(appointment.START_AT)}
+                                    {formatAppointmentDate(
+                                      appointment.START_AT
+                                    )}
                                     {appointment.END_AT
                                       ? ` - ${dayjs(appointment.END_AT).format('hh:mm A')}`
                                       : ''}
@@ -348,7 +366,7 @@ const Page: React.FC = () => {
                   )}
                 />
               </CustomCard>
-            </>
+            </CustomSpace>
           }
         >
           <CustomCard>
