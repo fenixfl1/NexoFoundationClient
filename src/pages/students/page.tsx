@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { CalendarOutlined, EyeOutlined } from '@ant-design/icons'
+import { EyeOutlined } from '@ant-design/icons'
 import CustomDivider from 'src/components/custom/CustomDivider'
 import CustomSpin from 'src/components/custom/CustomSpin'
 import SmartTable from 'src/components/SmartTable'
@@ -165,13 +165,13 @@ const StudentsPage: React.FC = () => {
               onClick={() => openDrawer(record)}
             />
           </CustomTooltip>
-          <CustomTooltip title={'Seguimiento'}>
+          {/* <CustomTooltip title={'Seguimiento'}>
             <CustomButton
               type="link"
               icon={<CalendarOutlined />}
               onClick={() => openDrawer(record)}
             />
-          </CustomTooltip>
+          </CustomTooltip> */}
         </CustomSpace>
       ),
     },

@@ -17,6 +17,7 @@ const CustomPersonSelector: React.FC<CustomPersonSelectorProps> = ({
   placeholder = 'Seleccionar...',
   allowClear = true,
   showSearch = true,
+  ...props
 }) => {
   const [searchKey, setSearchKey] = useState('')
   const debounce = useDebounce(searchKey)
@@ -32,7 +33,7 @@ const CustomPersonSelector: React.FC<CustomPersonSelectorProps> = ({
 
     return data?.map((item) => ({
       label: `${item.NAME} ${item.LAST_NAME}`,
-      value: item.USER_ID,
+      value: item.PERSON_ID,
     }))
   }, [data])
 
@@ -74,6 +75,7 @@ const CustomPersonSelector: React.FC<CustomPersonSelectorProps> = ({
       onSearch={setSearchKey}
       allowClear={allowClear}
       showSearch={showSearch}
+      {...props}
     />
   )
 }
