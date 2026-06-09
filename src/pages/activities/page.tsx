@@ -229,9 +229,6 @@ const ActivitiesPage: React.FC = () => {
         <CustomRow justify="space-between" align="middle">
           <CustomCol>
             <CustomTitle level={4}>Actividades y voluntariado</CustomTitle>
-            <CustomText type="secondary">
-              Gestiona jornadas, inscribe becarios y acredita horas completadas.
-            </CustomText>
           </CustomCol>
           <ConditionalComponent condition={!isStudentRole}>
             <CustomCol>

@@ -22,12 +22,16 @@ import ModuleSummary from 'src/components/ModuleSummary'
 import useDebounce from 'src/hooks/use-debounce'
 import ConditionalComponent from 'src/components/ConditionalComponent'
 import { ColumnMapValue } from 'src/components/custom/CustomTable'
+import { getSessionInfo } from 'src/lib/session'
+import { ROLE_STUDENT_ID } from 'src/utils/role-path'
 
 const RequestsPage: React.FC = () => {
   const [modalState, setModalState] = useState<boolean>()
   const [editing, setEditing] = useState<RequestItem>()
   const [searchKey, setSearchKey] = useState('')
   const debounce = useDebounce(searchKey)
+  const { roleId } = getSessionInfo()
+  const isStudentRole = String(roleId) === ROLE_STUDENT_ID
   const {
     requests,
     summary,
@@ -177,6 +181,7 @@ const RequestsPage: React.FC = () => {
       key: 'actions',
       title: 'Acciones',
       align: 'center',
+      width: '5%',
       render: (_, record) => (
         <CustomSpace direction={'horizontal'}>
           <CustomTooltip title="Ver detalle">
@@ -186,16 +191,18 @@ const RequestsPage: React.FC = () => {
               onClick={() => openDrawer(record)}
             />
           </CustomTooltip>
-          <CustomTooltip title="Editar solicitud">
-            <CustomButton
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => {
-                setEditing(record)
-                setModalState(true)
-              }}
-            />
-          </CustomTooltip>
+          <ConditionalComponent condition={!isStudentRole}>
+            <CustomTooltip title="Editar solicitud">
+              <CustomButton
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => {
+                  setEditing(record)
+                  setModalState(true)
+                }}
+              />
+            </CustomTooltip>
+          </ConditionalComponent>
         </CustomSpace>
       ),
     },
