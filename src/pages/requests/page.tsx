@@ -93,10 +93,12 @@ const RequestsPage: React.FC = () => {
         }
       >
     >((acc, item) => {
+      if (!item?.VALUE) return acc
+
       acc[item.VALUE] = {
         key: item.VALUE,
         title: item.LABEL ?? item.VALUE,
-        value: summary[item.VALUE],
+        value: summary?.[item.VALUE] ?? 0,
       }
 
       return acc
@@ -162,7 +164,7 @@ const RequestsPage: React.FC = () => {
     },
     {
       dataIndex: 'STATUS',
-      key: 'status',
+      key: 'STATE',
       title: 'Estado',
       render: (value) => {
         const item = status.find((item) => item.VALUE === value)
@@ -183,7 +185,7 @@ const RequestsPage: React.FC = () => {
       align: 'center',
       width: '5%',
       render: (_, record) => (
-        <CustomSpace direction={'horizontal'}>
+        <CustomSpace direction={'vertical'}>
           <CustomTooltip title="Ver detalle">
             <CustomButton
               type="link"

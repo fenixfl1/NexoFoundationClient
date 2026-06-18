@@ -5,7 +5,7 @@ import { ActivityParticipant } from './activity.types'
 
 interface EnrollPayload {
   ACTIVITY_ID: number
-  STUDENT_ID: number
+  STUDENT_ID?: number
 }
 
 export function useEnrollActivityMutation(onSuccess?: () => void) {

@@ -12,10 +12,13 @@ export interface Activity {
   CAPACITY?: number | null
   STATUS: ActivityStatus
   ENROLLED?: number
+  IS_ENROLLED?: boolean
 }
 
-export interface ActivityPayload
-  extends Omit<Activity, 'ACTIVITY_ID' | 'ENROLLED'> {}
+export interface ActivityPayload extends Omit<
+  Activity,
+  'ACTIVITY_ID' | 'ENROLLED' | 'IS_ENROLLED'
+> {}
 
 export interface ActivityParticipant {
   PARTICIPANT_ID: number

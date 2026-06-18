@@ -139,8 +139,10 @@ const SmartTable: React.FC<SmartTableProps> = ({
 
     const arr = [..._columns]
 
-    if (showStates && !arr.some((col) => col.key === 'STATE')) {
-      arr.push(stateColumn)
+    if (!arr.some((col) => col.key === 'STATE')) {
+      if (showStates) {
+        arr.push(stateColumn)
+      }
     }
 
     if (showActions && !_columns.some((col) => col.key === 'ACTIONS')) {

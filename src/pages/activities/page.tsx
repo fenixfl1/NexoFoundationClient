@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { ColumnsType } from 'antd/lib/table'
 import {
+  EditOutlined,
   FileTextOutlined,
   PlusOutlined,
   UserAddOutlined,
@@ -129,6 +130,21 @@ const ActivitiesPage: React.FC = () => {
     setSelectedActivity(undefined)
   }
 
+  const handleEnrollClick = useCallback(
+    async (activity: Activity) => {
+      if (activity.IS_ENROLLED) return
+
+      if (isStudentRole) {
+        await enroll({ ACTIVITY_ID: activity.ACTIVITY_ID })
+        return
+      }
+
+      setSelectedActivity(activity)
+      setEnrollOpen(true)
+    },
+    [enroll, isStudentRole]
+  )
+
   const columns: ColumnsType<Activity> = useMemo(
     () => [
       {
@@ -177,29 +193,39 @@ const ActivitiesPage: React.FC = () => {
         key: 'actions',
         title: 'Acciones',
         align: 'center',
+        width: '8%',
         render: (_, record) => (
-          <CustomSpace size={8}>
+          <CustomSpace
+            direction="horizontal"
+            size={8}
+            split={<CustomDivider style={{ margin: 0 }} />}
+          >
             <ConditionalComponent condition={!isStudentRole}>
               <CustomTooltip title="Editar">
                 <CustomButton
+                  icon={<EditOutlined />}
                   type="link"
                   onClick={() => {
                     setEditing(record)
                     setModalOpen(true)
                   }}
-                >
-                  Editar
-                </CustomButton>
+                />
               </CustomTooltip>
             </ConditionalComponent>
-            <CustomTooltip title="Inscribir becario">
+            <CustomTooltip
+              title={
+                isStudentRole && record.IS_ENROLLED
+                  ? 'Ya estás inscrito'
+                  : isStudentRole
+                    ? 'Inscribirme'
+                    : 'Inscribir becario'
+              }
+            >
               <CustomButton
                 type="link"
+                disabled={isStudentRole && record.IS_ENROLLED}
                 icon={<UserAddOutlined />}
-                onClick={() => {
-                  setSelectedActivity(record)
-                  setEnrollOpen(true)
-                }}
+                onClick={() => handleEnrollClick(record)}
               />
             </CustomTooltip>
             <ConditionalComponent condition={!isStudentRole}>
@@ -220,7 +246,7 @@ const ActivitiesPage: React.FC = () => {
         ),
       },
     ],
-    [isStudentRole, updateActivity]
+    [handleEnrollClick, isStudentRole, updateActivity]
   )
 
   return (
@@ -258,6 +284,7 @@ const ActivitiesPage: React.FC = () => {
           onSearch={setSearchKey}
           onChange={handleSearch}
           showActions={false}
+          showStates={false}
         />
       </CustomCard>
 

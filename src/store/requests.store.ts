@@ -32,8 +32,8 @@ export const useRequestStore = create<UseRequestStore>((set) => ({
   closeDrawer: () => set({ drawerOpen: false, selected: undefined }),
   setRequests: ({ data, metadata }) =>
     set({
-      requests: data,
+      requests: data ?? [],
       metadata: metadata?.pagination ?? defaultMetadata,
-      summary: metadata.summary,
+      summary: metadata?.summary ?? {},
     }),
 }))

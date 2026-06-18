@@ -11,14 +11,12 @@ export function useGetCatalog(
 
   const { multiCatalogList = {} } = useCatalogStore()
 
-  // eslint-disable-next-line no-console
-  console.log({ multiCatalogList })
-
   useEffect(() => {
     if (catalogName && Object.keys(multiCatalogList).length) {
-      setList(multiCatalogList[catalogName])
+      const catalogItems = multiCatalogList[catalogName]
+      setList(Array.isArray(catalogItems) ? catalogItems : [])
     }
   }, [multiCatalogList, catalogName])
 
-  return [list ?? []]
+  return [Array.isArray(list) ? list : []]
 }
