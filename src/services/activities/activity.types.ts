@@ -1,3 +1,5 @@
+import dayjs from 'dayjs'
+
 export type ActivityStatus = 'planned' | 'completed' | 'cancelled'
 export type ParticipantStatus = 'registered' | 'completed' | 'cancelled'
 
@@ -5,8 +7,8 @@ export interface Activity {
   ACTIVITY_ID: number
   TITLE: string
   DESCRIPTION?: string | null
-  START_AT: string
-  END_AT?: string | null
+  START_AT: string | dayjs.Dayjs
+  END_AT?: string | null | dayjs.Dayjs
   LOCATION?: string | null
   HOURS: number
   CAPACITY?: number | null

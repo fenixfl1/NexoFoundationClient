@@ -9,7 +9,11 @@ import CustomTextarea from 'src/components/custom/CustomTextArea'
 import CustomDatePicker from 'src/components/custom/CustomDatePicker'
 import CustomInputNumber from 'src/components/custom/CustomInputNumber'
 import CustomSelect from 'src/components/custom/CustomSelect'
-import { Activity, ActivityPayload } from 'src/services/activities/activity.types'
+import {
+  Activity,
+  ActivityPayload,
+} from 'src/services/activities/activity.types'
+import dayjs from 'dayjs'
 
 export type ActivityFormValues = ActivityPayload & { ACTIVITY_ID?: number }
 
@@ -39,6 +43,8 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
     if (open && editing) {
       form.setFieldsValue({
         ...editing,
+        END_AT: editing.END_AT ? (dayjs(editing.END_AT) as never) : null,
+        START_AT: editing.START_AT ? (dayjs(editing.START_AT) as never) : null,
       })
     }
     if (open && !editing) {
@@ -113,13 +119,20 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             </CustomFormItem>
           </CustomCol>
           <CustomCol span={8}>
-            <CustomFormItem label="Estado" name="STATUS" initialValue={'planned'}>
+            <CustomFormItem
+              label="Estado"
+              name="STATUS"
+              initialValue={'planned'}
+            >
               <CustomSelect options={statusOptions} />
             </CustomFormItem>
           </CustomCol>
           <CustomCol span={24}>
             <CustomFormItem label="Descripción" name="DESCRIPTION">
-              <CustomTextarea rows={3} placeholder="Detalles, requerimientos, etc." />
+              <CustomTextarea
+                rows={3}
+                placeholder="Detalles, requerimientos, etc."
+              />
             </CustomFormItem>
           </CustomCol>
         </CustomRow>
