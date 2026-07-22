@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "serve -s dist -l 3001",
+    "start:pm2": "pm2 serve dist 3001 --name client --spa",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
