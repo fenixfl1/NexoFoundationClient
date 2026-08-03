@@ -1,5 +1,6 @@
 import { Form } from 'antd'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import ConditionalComponent from 'src/components/ConditionalComponent'
 import SearchBar from 'src/components/SearchBar'
 import CustomCard from 'src/components/custom/CustomCard'
@@ -15,6 +16,7 @@ import { useErrorHandler } from 'src/hooks/use-error-handler'
 import { useGetUserPaginationMutation } from 'src/services/users/useGetUserPaginationMutation'
 import { User } from 'src/services/users/users.types'
 import { useUpdateUserMutation } from 'src/services/users/useUpdateUserMutation'
+import { usePeopleStore } from 'src/store/people.store'
 import { useUserStore } from 'src/store/user.store'
 import { AdvancedCondition } from 'src/types/general'
 import { getConditionFromForm } from 'src/utils/get-condition-from'
@@ -32,12 +34,14 @@ const UserPage: React.FC = () => {
   const { confirmModal } = useCustomModal()
   const { successNotification } = useCustomNotifications()
   const [form] = Form.useForm()
+  const [, setSearchParams] = useSearchParams()
   const [selectedUser, setSelectedUser] = useState<User>()
   const [userModalState, setUserModalState] = useState<boolean>()
   const [searchKey, setSearchKey] = useState<string>('')
   const debounce = useDebounce(searchKey)
 
   const { metadata } = useUserStore()
+  const { setProfileVisibilitySate } = usePeopleStore()
 
   const { mutate: getUserPagination, isPending: isGetUserPending } =
     useGetUserPaginationMutation()
@@ -83,6 +87,13 @@ const UserPage: React.FC = () => {
   const handleEdit = (user: User) => {
     setSelectedUser(user)
     setUserModalState(true)
+  }
+
+  const handleView = (user: User) => {
+    setProfileVisibilitySate(true)
+    setSearchParams({
+      username: user.USERNAME,
+    })
   }
 
   const handleToggleState = async (user: User) => {
@@ -151,7 +162,11 @@ const UserPage: React.FC = () => {
             onFilter={() => handleSearch()}
           />
 
-          <UserList onEdit={handleEdit} onToggleState={handleToggleState} />
+          <UserList
+            onEdit={handleEdit}
+            onView={handleView}
+            onToggleState={handleToggleState}
+          />
         </CustomCard>
       </CustomSpin>
       <ConditionalComponent condition={userModalState}>

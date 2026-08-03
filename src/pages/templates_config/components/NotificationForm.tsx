@@ -171,7 +171,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
           type="info"
           showIcon
           message={
-            'Puedes crear una notificación desde cero o apoyarte en una plantilla. Si eliges una plantilla, se completan automáticamente el canal, el asunto y el contenido. El payload permite enviar datos dinamicos para reemplazar variables dentro del mensaje.'
+            'Puedes crear una notificación desde cero o apoyarte en una plantilla. Si eliges una plantilla, se completan automáticamente el canal, el asunto y el contenido. El payload permite enviar datos dinámicos para reemplazar variables dentro del mensaje.'
           }
           style={{ marginBottom: 16 }}
         />

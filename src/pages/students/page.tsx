@@ -19,9 +19,25 @@ import { useGetMultiCatalogList } from 'src/hooks/use-get-multi-catalog-list'
 import { useGetCatalog } from 'src/hooks/use-get-catalog'
 import ModuleSummary from 'src/components/ModuleSummary'
 import { ColumnMapValue } from 'src/components/custom/CustomTable'
+import { Form } from 'antd'
+import { getConditionFromForm } from 'src/utils/get-condition-from'
+import useDebounce from 'src/hooks/use-debounce'
+import StateSelector from 'src/components/StateSelector'
+import CustomCol from 'src/components/custom/CustomCol'
+import CustomFormItem from 'src/components/custom/CustomFormItem'
+import CustomRow from 'src/components/custom/CustomRow'
+import CatalogSelector from 'src/components/CatalogSelector'
+
+const initialFilter = {
+  FILTER: {
+    STATE__IN: ['A'],
+  },
+}
 
 const StudentsPage: React.FC = () => {
+  const [form] = Form.useForm()
   const [searchKey, setSearchKey] = useState('')
+  const debounce = useDebounce(searchKey)
   const [pagination, setPagination] = useState({ page: 1, size: 10 })
   const [status] = useGetCatalog('ID_LIST_STUDENT_STATES')
   const [careesList] = useGetCatalog('ID_LIST_CAREERS')
@@ -43,14 +59,18 @@ const StudentsPage: React.FC = () => {
     setPagination((prev) => ({ ...prev, page: 1 }))
   }, [searchKey])
 
-  useEffect(() => {
-    const condition: AdvancedCondition[] = []
+  const handleSearch = useCallback(() => {
+    const { FILTER = initialFilter.FILTER } = form.getFieldsValue()
 
-    if (searchKey) {
+    const filter = getConditionFromForm(FILTER)
+
+    const condition: AdvancedCondition[] = [...filter]
+
+    if (debounce) {
       condition.push({
         field: 'FILTER',
         operator: 'LIKE',
-        value: searchKey,
+        value: debounce,
       })
     }
 
@@ -59,7 +79,9 @@ const StudentsPage: React.FC = () => {
       size: pagination.size,
       condition,
     })
-  }, [getStudents, pagination.page, pagination.size, searchKey])
+  }, [getStudents, pagination.page, pagination.size, debounce])
+
+  useEffect(handleSearch, [handleSearch])
 
   const statusConfig = useCallback(
     (value: string): { label: string; color: string } => {
@@ -205,7 +227,34 @@ const StudentsPage: React.FC = () => {
     },
   }
 
-  const filter = <>Filtros</>
+  const filter = (
+    <CustomRow>
+      <CustomCol xs={24}>
+        <CustomFormItem
+          label={'Estado'}
+          initialValue={initialFilter.FILTER.STATE__IN}
+          name={['FILTER', 'STATE__IN']}
+          labelCol={{ span: 24 }}
+        >
+          <StateSelector />
+        </CustomFormItem>
+      </CustomCol>
+      <CustomCol xs={24}>
+        <CustomFormItem
+          label={'Universidad'}
+          name={['FILTER', 'UNIVERSITY__IN']}
+          rules={[{ required: true }]}
+          labelCol={{ span: 24 }}
+        >
+          <CatalogSelector
+            mode={'multiple'}
+            catalog={'ID_LIST_UNIVERSITIES'}
+            placeholder={'Seleccionar universidad'}
+          />
+        </CustomFormItem>
+      </CustomCol>
+    </CustomRow>
+  )
 
   return (
     <>
@@ -213,6 +262,7 @@ const StudentsPage: React.FC = () => {
         <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
         <CustomDivider />
         <SmartTable
+          form={form}
           exportable
           columnsMap={columnsMap}
           filter={filter}
@@ -224,12 +274,7 @@ const StudentsPage: React.FC = () => {
           onEdit={() => null}
           onUpdate={() => null}
           onSearch={setSearchKey}
-          onChange={(page, size) =>
-            setPagination({
-              page: page ?? pagination.page,
-              size: size ?? pagination.size,
-            })
-          }
+          onChange={handleSearch}
         />
       </CustomSpin>
 

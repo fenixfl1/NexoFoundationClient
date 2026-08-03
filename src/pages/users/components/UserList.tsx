@@ -19,10 +19,15 @@ import { getTablePagination } from 'src/utils/table-pagination'
 interface UserListProps {
   dataSource?: User[]
   onEdit?: (user: User) => void
+  onView?: (user: User) => void
   onToggleState?: (user: User) => void
 }
 
-const UserList: React.FC<UserListProps> = ({ onEdit, onToggleState }) => {
+const UserList: React.FC<UserListProps> = ({
+  onEdit,
+  onView,
+  onToggleState,
+}) => {
   const { userList, metadata } = useUserStore()
 
   const renderItem: ListProps<User>['renderItem'] = (item) => (
@@ -51,7 +56,7 @@ const UserList: React.FC<UserListProps> = ({ onEdit, onToggleState }) => {
       <CustomListItemMeta
         avatar={<CustomAvatar size={44} src={getAvatarLink(item)} />}
         title={
-          <CustomLink onClick={() => onEdit?.(item)}>{item.FULL_NAME}</CustomLink>
+          <CustomLink onClick={() => onView?.(item)}>{item.FULL_NAME}</CustomLink>
         }
         description={
           <CustomSpace

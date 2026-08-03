@@ -24,8 +24,22 @@ import ConditionalComponent from 'src/components/ConditionalComponent'
 import { ColumnMapValue } from 'src/components/custom/CustomTable'
 import { getSessionInfo } from 'src/lib/session'
 import { ROLE_STUDENT_ID } from 'src/utils/role-path'
+import { Form } from 'antd'
+import { getConditionFromForm } from 'src/utils/get-condition-from'
+import CustomRow from 'src/components/custom/CustomRow'
+import CustomFormItem from 'src/components/custom/CustomFormItem'
+import StateSelector from 'src/components/StateSelector'
+import CustomCol from 'src/components/custom/CustomCol'
+import CatalogSelector from 'src/components/CatalogSelector'
+
+const initialFilter = {
+  FILTER: {
+    STATUS__IN: ['P', 'A', 'R'],
+  },
+}
 
 const RequestsPage: React.FC = () => {
+  const [form] = Form.useForm()
   const [modalState, setModalState] = useState<boolean>()
   const [editing, setEditing] = useState<RequestItem>()
   const [searchKey, setSearchKey] = useState('')
@@ -65,7 +79,11 @@ const RequestsPage: React.FC = () => {
 
   const loadRequests = useCallback(
     (page = metadata.currentPage, size = metadata.pageSize) => {
-      const condition: AdvancedCondition[] = []
+      const { FILTER = initialFilter.FILTER } = form.getFieldsValue()
+
+      const filter = getConditionFromForm(FILTER)
+
+      const condition: AdvancedCondition[] = [...filter]
 
       if (debounce) {
         condition.push({
@@ -185,7 +203,10 @@ const RequestsPage: React.FC = () => {
       align: 'center',
       width: '5%',
       render: (_, record) => (
-        <CustomSpace direction={'vertical'}>
+        <CustomSpace
+          direction={'horizontal'}
+          split={<CustomDivider type={'vertical'} size={'small'} />}
+        >
           <CustomTooltip title="Ver detalle">
             <CustomButton
               type="link"
@@ -250,6 +271,41 @@ const RequestsPage: React.FC = () => {
     },
   }
 
+  const filter = (
+    <CustomRow>
+      <CustomCol xs={24}>
+        <CustomFormItem
+          label={'Estado'}
+          initialValue={initialFilter.FILTER.STATUS__IN}
+          name={['FILTER', 'STATUS__IN']}
+          labelCol={{ span: 24 }}
+        >
+          <StateSelector
+            options={status?.map((item) => ({
+              label: item.LABEL,
+              value: item.VALUE,
+            }))}
+          />
+        </CustomFormItem>
+      </CustomCol>
+
+      <CustomCol xs={24}>
+        <CustomFormItem
+          label={'Universidad'}
+          name={['FILTER', 'UNIVERSITY__IN']}
+          rules={[{ required: true }]}
+          labelCol={{ span: 24 }}
+        >
+          <CatalogSelector
+            mode={'multiple'}
+            catalog={'ID_LIST_UNIVERSITIES'}
+            placeholder={'Seleccionar universidad'}
+          />
+        </CustomFormItem>
+      </CustomCol>
+    </CustomRow>
+  )
+
   return (
     <>
       <CustomSpin spinning={isPending}>
@@ -265,7 +321,9 @@ const RequestsPage: React.FC = () => {
         <CustomDivider />
 
         <SmartTable
+          form={form}
           exportable
+          filter={filter}
           columnsMap={columnsMap}
           showStates={false}
           dataSource={requests}

@@ -262,10 +262,10 @@ const NotificationsSection: React.FC = () => {
 
   const handleToggleState = (record: NotificationItem) => {
     confirmModal({
-      title: 'Confirmacion',
+      title: 'Confirmación',
       content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
-      } la notificacion para "${record.RECIPIENT}"?`,
+      } la notificación para "${record.RECIPIENT}"?`,
       onOk: async () => {
         try {
           await updateNotification({
@@ -394,7 +394,7 @@ const NotificationsSection: React.FC = () => {
       </CustomCol>
       <CustomCol xs={24}>
         <CustomFormItem
-          label={'Estado del envio'}
+          label={'Estado del envío'}
           name={['FILTER', 'STATUS__IN']}
           labelCol={{ span: 24 }}
         >
@@ -443,7 +443,7 @@ const NotificationsSection: React.FC = () => {
         columns={columns}
         dataSource={notifications}
         metadata={metadata}
-        createText={'Registrar notificacion'}
+        createText={'Registrar notificación'}
         searchPlaceholder={'Buscar notificaciones...'}
         onCreate={() => {
           setEditing(undefined)

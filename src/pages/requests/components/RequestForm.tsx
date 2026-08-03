@@ -240,9 +240,7 @@ const RequestForm: React.FC<RequestFormProps> = ({
     const currentStudentId = form.getFieldValue('STUDENT_ID')
     if (currentStudentId) return
 
-    const student = students.find(
-      (item) => item.PERSON_ID === sessionPersonId
-    )
+    const student = students.find((item) => item.PERSON_ID === sessionPersonId)
 
     if (student?.STUDENT_ID) {
       form.setFieldsValue({
@@ -262,7 +260,9 @@ const RequestForm: React.FC<RequestFormProps> = ({
   )
   const selectedStudent = useMemo(
     () =>
-      students.find((student) => student.STUDENT_ID === Number(currentStudentId)),
+      students.find(
+        (student) => student.STUDENT_ID === Number(currentStudentId)
+      ),
     [currentStudentId, students]
   )
 
@@ -311,10 +311,7 @@ const RequestForm: React.FC<RequestFormProps> = ({
 
             <ConditionalComponent condition={showAdminCreateFields}>
               <CustomCol {...defaultBreakpoints}>
-                <CustomFormItem
-                  label={'Becario (opcional)'}
-                  name={'STUDENT_ID'}
-                >
+                <CustomFormItem label={'Becario'} name={'STUDENT_ID'}>
                   <CustomSelect
                     placeholder={'Vincular becario existente'}
                     options={studentOptions}
@@ -392,7 +389,12 @@ const RequestForm: React.FC<RequestFormProps> = ({
                 name={'NOTES'}
                 rules={
                   isStudent
-                    ? [{ required: true, message: 'Agrega una nota para la solicitud.' }]
+                    ? [
+                        {
+                          required: true,
+                          message: 'Agrega una nota para la solicitud.',
+                        },
+                      ]
                     : undefined
                 }
                 {...labelColFullWidth}

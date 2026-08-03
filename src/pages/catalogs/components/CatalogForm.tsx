@@ -2,6 +2,7 @@ import { CloseOutlined, StopOutlined } from '@ant-design/icons'
 import { Form } from 'antd'
 import React, { useCallback, useEffect } from 'react'
 import ConditionalComponent from 'src/components/ConditionalComponent'
+import CustomAlert from 'src/components/custom/CustomAlert'
 import CustomButton from 'src/components/custom/CustomButton'
 import CustomCol from 'src/components/custom/CustomCol'
 import CustomCollapseFormList, {
@@ -357,7 +358,7 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
 
     if (item.ITEM_ID) {
       return confirmModal({
-        title: 'Confirmacion',
+        title: 'Confirmación',
         content: (
           <p>
             Deseas {isActive ? 'inhabilitar' : 'habilitar'} el item{' '}
@@ -403,6 +404,14 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
           isGetCatalogFetching
         }
       >
+        <CustomAlert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={
+            'Puedes crear un catalogo y agregar items a este. Cada item puede tener un conjunto de claves y valores adicionales que se pueden utilizar para almacenar información extra.'
+          }
+        />
         <CustomForm form={form} {...formItemLayout}>
           <CustomRow>
             <CustomFormItem hidden name={'KEY'} />
@@ -419,11 +428,11 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Descripcion'}
+                label={'Descripción'}
                 name={'DESCRIPTION'}
                 {...labelColFullWidth}
               >
-                <CustomTextArea placeholder={'Descripcion del catalogo'} />
+                <CustomTextArea placeholder={'Descripción del catalogo'} />
               </CustomFormItem>
             </CustomCol>
 
