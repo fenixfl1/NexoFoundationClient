@@ -139,7 +139,10 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({
 
   const handleExport = async () => {
     try {
-      const values = await form.validateFields()
+      const values = {
+        ...(initialValues ?? {}),
+        ...(await form.validateFields()),
+      }
 
       values.ref = ref
       values.columnsMap = columnsMap
@@ -214,6 +217,9 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({
         {...formItemLayout}
       >
         <CustomRow>
+          <CustomFormItem name={'reportType'} hidden noStyle>
+            <CustomInput />
+          </CustomFormItem>
           <CustomCol {...defaultBreakpoints}>
             <CustomFormItem
               label={'Formato'}

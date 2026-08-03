@@ -656,10 +656,10 @@ export async function exportToPDF<T = any>({
   doc.setFontSize(18)
   doc.text(title, pageWidth / 2, 20, { align: 'center' })
 
-  if (reportType) {
+  if (reportType && reportType !== title) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(12)
-    doc.text(`Tipo de reporte: ${reportType}`, pageWidth / 2, 27, {
+    doc.text(`${reportType}`, pageWidth / 2, 27, {
       align: 'center',
     })
   }
