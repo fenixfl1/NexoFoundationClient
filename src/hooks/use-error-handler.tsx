@@ -70,7 +70,7 @@ export function useErrorHandler(): [ErrorHandler] {
       const shouldUseServerMessage =
         (useServerMessage && error_code !== 'UNEXPECTED_ERROR') ||
         useDefaultMessage.includes(error_code) ||
-        import.meta.env.MODE === 'development'
+        import.meta.env.MODE === 'production'
 
       const finalMessage =
         shouldUseServerMessage && serverMessage
