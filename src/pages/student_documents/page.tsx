@@ -107,8 +107,8 @@ const Page: React.FC = () => {
 
   const handleToggleState = (record: StudentDocument) => {
     confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
+      title: 'Confirmacion',
+      content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
       } el documento?`,
       onOk: async () => {
@@ -145,7 +145,7 @@ const Page: React.FC = () => {
               description:
                 type === 'signed'
                   ? 'No hay un archivo firmado para este documento.'
-                  : 'El archivo no está disponible.',
+                  : 'El archivo no esta disponible.',
             },
             'warning'
           )
@@ -220,7 +220,7 @@ const Page: React.FC = () => {
       baseColumns.splice(2, 0, {
         dataIndex: 'UNIVERSITY',
         key: 'UNIVERSITY',
-        title: 'Institución',
+        title: 'Universidad',
         render: (_, record) => (
           <CustomSpace direction="vertical" size={0}>
             <CustomText>{record.UNIVERSITY}</CustomText>
@@ -332,7 +332,7 @@ const Page: React.FC = () => {
           name={['FILTER', 'DOCUMENT_TYPE__LIKE']}
           labelCol={{ span: 24 }}
         >
-          <CustomInput placeholder="Ej: Carta de aceptación" />
+          <CustomInput placeholder="Ej: Carta de aceptacion" />
         </CustomFormItem>
       </CustomCol>
     </CustomRow>
@@ -355,7 +355,7 @@ const Page: React.FC = () => {
         </div>
       </ConditionalComponent>
       <SmartTable
-      exportable
+        exportable
         form={form}
         rowKey={isStudentRole ? 'DOCUMENT_ID' : 'GROUP_KEY'}
         loading={isPending || isUpdatePending || isRequirementsPending}
@@ -412,10 +412,11 @@ const Page: React.FC = () => {
             : {
                 indentSize: 20,
                 expandedRowKeys,
+                onExpand: handleExpandedRow,
                 expandIcon: ({ expanded, ...props }) => (
                   <CustomButton
-                    onClick={() =>
-                      handleExpandedRow(expanded, props.record as never)
+                    onClick={(event) =>
+                      props.onExpand?.(props.record as never, event)
                     }
                     type={'text'}
                     icon={expanded ? <MinusOutlined /> : <PlusOutlined />}

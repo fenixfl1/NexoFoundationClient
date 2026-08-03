@@ -7,7 +7,7 @@ import { CustomParagraph } from './CustomParagraph'
 const defaultMessage = (
   <CustomParagraph>
     <p>
-      Si cierra la ventana perderá cualquier información que halla introducido.{' '}
+      Si cierra la ventana perderá cualquier información que haya introducido.{' '}
       <br /> ¿Desea cerrar la ventana?
     </p>
   </CustomParagraph>

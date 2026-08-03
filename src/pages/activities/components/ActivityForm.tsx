@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Form } from 'antd'
+import dayjs from 'dayjs'
 import CustomModal from 'src/components/custom/CustomModal'
 import CustomRow from 'src/components/custom/CustomRow'
 import CustomCol from 'src/components/custom/CustomCol'
@@ -13,7 +14,6 @@ import {
   Activity,
   ActivityPayload,
 } from 'src/services/activities/activity.types'
-import dayjs from 'dayjs'
 
 export type ActivityFormValues = ActivityPayload & { ACTIVITY_ID?: number }
 
@@ -47,6 +47,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         START_AT: editing.START_AT ? (dayjs(editing.START_AT) as never) : null,
       })
     }
+
     if (open && !editing) {
       form.resetFields()
     }
@@ -78,29 +79,50 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
         <CustomRow gutter={[12, 12]}>
           <CustomCol span={12}>
             <CustomFormItem
-              label="Título"
+              label="Titulo"
               name="TITLE"
-              rules={[{ required: true, message: 'Ingresa el título' }]}
+              rules={[{ required: true, message: 'Ingresa el titulo' }]}
             >
               <CustomInput placeholder="Jornada de voluntariado" />
             </CustomFormItem>
           </CustomCol>
           <CustomCol span={12}>
             <CustomFormItem label="Lugar" name="LOCATION">
-              <CustomInput placeholder="Campus / Dirección" />
+              <CustomInput placeholder="Campus / Direccion" />
             </CustomFormItem>
           </CustomCol>
           <CustomCol span={12}>
             <CustomFormItem
               label="Fecha inicio"
               name="START_AT"
-              rules={[{ required: true, message: 'Indica inicio' }]}
+              rules={[{ required: true, message: 'Indica la fecha de inicio' }]}
             >
               <CustomDatePicker showTime style={{ width: '100%' }} />
             </CustomFormItem>
           </CustomCol>
           <CustomCol span={12}>
-            <CustomFormItem label="Fecha fin" name="END_AT">
+            <CustomFormItem
+              label="Fecha fin"
+              name="END_AT"
+              dependencies={['START_AT']}
+              rules={[
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    const startAt = getFieldValue('START_AT')
+
+                    if (!startAt || !value || !dayjs(value).isBefore(dayjs(startAt))) {
+                      return Promise.resolve()
+                    }
+
+                    return Promise.reject(
+                      new Error(
+                        'La fecha de fin no puede ser anterior a la fecha de inicio'
+                      )
+                    )
+                  },
+                }),
+              ]}
+            >
               <CustomDatePicker showTime style={{ width: '100%' }} />
             </CustomFormItem>
           </CustomCol>
@@ -108,7 +130,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             <CustomFormItem
               label="Horas"
               name="HOURS"
-              rules={[{ required: true, message: 'Indica horas' }]}
+              rules={[{ required: true, message: 'Indica la cantidad de horas' }]}
             >
               <CustomInputNumber min={0} max={200} style={{ width: '100%' }} />
             </CustomFormItem>
@@ -128,7 +150,7 @@ const ActivityForm: React.FC<ActivityFormProps> = ({
             </CustomFormItem>
           </CustomCol>
           <CustomCol span={24}>
-            <CustomFormItem label="Descripción" name="DESCRIPTION">
+            <CustomFormItem label="Descripcion" name="DESCRIPTION">
               <CustomTextarea
                 rows={3}
                 placeholder="Detalles, requerimientos, etc."

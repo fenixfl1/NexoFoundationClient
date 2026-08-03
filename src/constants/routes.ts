@@ -51,6 +51,7 @@ export const API_PATH_UPDATE_CATALOG_ITEM = '/catalogs/:catalogId/items/:itemId'
 export const PATH_GET_CATALOG = '/catalog/'
 export const API_PATH_GET_CATALOG_LIST = '/catalog/multi_list'
 export const API_PATH_CREATE_PERSON_REFERENCES = '/person/references'
+export const API_PATH_UPDATE_PERSON_REFERENCE = '/person/reference'
 export const API_PATH_GET_REQUEST_PAGINATION = '/requests/pagination'
 export const API_PATH_CREATE_UPDATE_REQUEST = '/requests'
 export const API_PATH_CREATE_UPDATE_NOTIFICATION_TEMPLATE =
@@ -60,7 +61,7 @@ export const API_PATH_GET_NOTIFICATION_TEMPLATE_PAGINATION =
 export const API_PATH_GET_NOTIFICATION_TEMPLATE = '/notification_templates'
 export const API_PATH_CREATE_UPDATE_NOTIFICATION = '/notifications'
 export const API_PATH_GET_NOTIFICATION_PAGINATION = '/notifications/pagination'
-export const API_PATH_GET_NOTIFICATION = '/notifications'
+export const API_PATH_GET_NOTIFICATION = '/notifications/'
 export const API_PATH_CREATE_UPDATE_APPOINTMENT = '/appointments'
 export const API_PATH_GET_APPOINTMENT_PAGINATION = '/appointments/pagination'
 export const API_PATH_GET_APPOINTMENT = '/appointments'
@@ -105,7 +106,7 @@ export const API_PATH_GET_STUDENT_REQUIREMENT = '/student_requirements'
 // Calificaciones / Índice académico
 export const API_PATH_CREATE_UPDATE_TERM = '/grades/terms'
 export const API_PATH_GET_TERM_PAGINATION = '/grades/terms/pagination'
-export const API_PATH_GET_TERM = '/grades/terms'
+export const API_PATH_GET_TERM = '/grades/terms/'
 export const API_PATH_GET_TERM_BY_STUDENT = '/grades/terms/student'
 
 // Actividades / voluntariado
@@ -115,3 +116,5 @@ export const API_PATH_GET_ACTIVITY_PAGINATION = '/activities/pagination'
 export const API_PATH_ACTIVITY_ENROLL = '/activities/enroll'
 export const API_PATH_ACTIVITY_PARTICIPANT_UPDATE =
   '/activities/participants/status'
+
+export const PATH_MAIN_LOGO = '/assets/main_logo.png'

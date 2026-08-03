@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 import { Form } from 'antd'
+import CustomAlert from 'src/components/custom/CustomAlert'
 import CustomModal from 'src/components/custom/CustomModal'
 import CustomForm from 'src/components/custom/CustomForm'
 import CustomFormItem from 'src/components/custom/CustomFormItem'
@@ -21,11 +22,12 @@ import { useAppNotification } from 'src/context/NotificationContext'
 import { useMenuOptionStore } from 'src/store/menu-options.store'
 import { useGetMenuOptionsWithPermissions } from 'src/services/menu-options/useGetMenuOptionsWithPermissions'
 import { AdvancedCondition } from 'src/types/general'
-import { notificationChannelOptions } from '../constants'
+import { notificationTemplateChannelOptions } from '../constants'
 import {
   labelColFullWidth,
   defaultBreakpoints,
 } from '../../../config/breakpoints'
+import { OptionWithPermission } from 'src/services/menu-options/menu-options.types'
 
 type TemplateFormValues = Omit<
   NotificationTemplate,
@@ -75,19 +77,17 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
   }, [open, handleGetMenuOptions])
 
   const menuOptionsList = useMemo(() => {
-    if (!menuOptionsWithPermissions?.length) return []
+    const build = (items: OptionWithPermission[]) =>
+      items.map((item) => ({
+        title: `${item.MENU_OPTION_ID} - ${item.NAME}`,
+        value: item.MENU_OPTION_ID,
+        key: item.MENU_OPTION_ID,
+        children: item.CHILDREN?.length
+          ? build(item.CHILDREN as OptionWithPermission[])
+          : [],
+      }))
 
-    return menuOptionsWithPermissions.map((item) => ({
-      title: item.NAME,
-      value: item.MENU_OPTION_ID,
-      key: item.MENU_OPTION_ID,
-      children:
-        item?.CHILDREN?.map((child) => ({
-          title: child.NAME,
-          value: child.MENU_OPTION_ID,
-          key: child.MENU_OPTION_ID,
-        })) ?? [],
-    }))
+    return build(menuOptionsWithPermissions as OptionWithPermission[])
   }, [menuOptionsWithPermissions])
 
   useEffect(() => {
@@ -105,7 +105,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
       form.resetFields()
       form.setFieldValue('STATE', 'A')
     }
-  }, [template, open])
+  }, [form, template, open])
 
   const parseJsonField = (value?: string | null) => {
     if (!value) return null
@@ -127,13 +127,13 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
           TEMPLATE_ID: template.TEMPLATE_ID,
         })
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Plantilla actualizada correctamente.',
         })
       } else {
         await createTemplate(payload)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Plantilla creada correctamente.',
         })
       }
@@ -153,7 +153,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
       JSON.parse(value)
       return Promise.resolve()
     } catch (_error) {
-      return Promise.reject('JSON inválido')
+      return Promise.reject(new Error('JSON invalido'))
     }
   }
 
@@ -168,6 +168,15 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
       <CustomSpin
         spinning={isCreatePending || isUpdatePending || isOptionsPending}
       >
+        <CustomAlert
+          type="info"
+          showIcon
+          message={
+            'Una plantilla te permite reutilizar mensajes y dejar preparados datos dinamicos. Los parametros describen las variables esperadas y los valores por defecto sirven como respaldo cuando una notificacion no envie todos los datos.'
+          }
+          style={{ marginBottom: 16 }}
+        />
+
         <CustomDivider />
         <CustomForm form={form} {...formItemLayout}>
           <CustomRow gutter={[16, 8]}>
@@ -175,6 +184,8 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
               <CustomFormItem
                 label={'Clave'}
                 name={'TEMPLATE_KEY'}
+                tooltip="Identificador tecnico unico de la plantilla."
+                extra="Recomendado: mayusculas, sin espacios y con guiones bajos."
                 rules={[{ required: true }]}
                 uppercase
               >
@@ -185,6 +196,7 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
               <CustomFormItem
                 label={'Nombre'}
                 name={'NAME'}
+                tooltip="Nombre visible para reconocer la plantilla."
                 rules={[{ required: true }]}
               >
                 <CustomInput placeholder={'Nombre de la plantilla'} />
@@ -194,20 +206,25 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
               <CustomFormItem
                 label={'Canal'}
                 name={'CHANNEL'}
+                tooltip="Medio por el que se enviara esta plantilla."
                 rules={[{ required: true }]}
               >
                 <CustomSelect
-                  options={notificationChannelOptions}
+                  options={notificationTemplateChannelOptions}
                   placeholder={'Seleccionar canal'}
                 />
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Opción de menú'} name={'MENU_OPTION_ID'}>
+              <CustomFormItem
+                label={'Opcion de menu'}
+                name={'MENU_OPTION_ID'}
+                tooltip="Modulo al que deseas asociar esta plantilla."
+              >
                 <CustomTreeSelect
                   allowClear
                   treeData={menuOptionsList}
-                  placeholder={'Seleccionar opción'}
+                  placeholder={'Seleccionar opcion'}
                   treeDefaultExpandAll
                   showSearch
                 />
@@ -215,17 +232,19 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Descripción'}
+                label={'Descripcion'}
                 name={'DESCRIPTION'}
+                tooltip="Explica en que escenario debe usarse esta plantilla."
                 {...labelColFullWidth}
               >
-                <CustomInput placeholder={'Descripción de la plantilla'} />
+                <CustomInput placeholder={'Descripcion de la plantilla'} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
                 label={'Asunto'}
                 name={'SUBJECT'}
+                tooltip="Encabezado del correo o titulo del mensaje."
                 rules={[{ max: 255 }]}
                 {...labelColFullWidth}
               >
@@ -236,6 +255,8 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
               <CustomFormItem
                 label={'Contenido'}
                 name={'BODY'}
+                tooltip="Cuerpo del mensaje. Puedes incluir variables dinamicas si las reemplazaras con parametros."
+                extra='Ejemplo: Hola {{studentName}}, tu solicitud fue aprobada.'
                 rules={[{ required: true }]}
                 {...labelColFullWidth}
               >
@@ -248,8 +269,10 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Parámetros'}
+                label={'Parametros'}
                 name={'PARAMETERS'}
+                tooltip="Lista de variables esperadas por la plantilla."
+                extra='Ejemplo: {"studentName":"Nombre del becario","amount":"Monto aprobado"}'
                 rules={[{ validator: jsonValidator }]}
                 {...labelColFullWidth}
               >
@@ -265,6 +288,8 @@ const TemplateForm: React.FC<TemplateFormProps> = ({
               <CustomFormItem
                 label={'Valores por defecto'}
                 name={'DEFAULTS'}
+                tooltip="Datos de respaldo cuando una notificacion no envie alguno de los parametros."
+                extra='Ejemplo: {"amount":"Pendiente","studentName":"Estudiante"}'
                 rules={[{ validator: jsonValidator }]}
                 {...labelColFullWidth}
               >

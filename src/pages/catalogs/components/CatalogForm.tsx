@@ -8,8 +8,8 @@ import CustomCollapseFormList, {
   RemoveFn,
 } from 'src/components/custom/CustomCollapseFormList'
 import CustomDivider from 'src/components/custom/CustomDivider'
-import CustomFormItem from 'src/components/custom/CustomFormItem'
 import CustomForm from 'src/components/custom/CustomForm'
+import CustomFormItem from 'src/components/custom/CustomFormItem'
 import CustomInput from 'src/components/custom/CustomInput'
 import CustomModal from 'src/components/custom/CustomModal'
 import { CustomTitle } from 'src/components/custom/CustomParagraph'
@@ -27,6 +27,7 @@ import { useCustomNotifications } from 'src/hooks/use-custom-notification'
 import { useErrorHandler } from 'src/hooks/use-error-handler'
 import queryClient from 'src/lib/query-client'
 import { Catalog, CatalogItem } from 'src/services/catalog/catalog.types'
+import { useCreateCatalogItemMutation } from 'src/services/catalog/useCreateCatalogItemMutation'
 import { useCreateCatalogueMutation } from 'src/services/catalog/useCreateCatalogueMutation'
 import { useGetOneCatalogQuery } from 'src/services/catalog/useGetOneCatalogQuery'
 import { useUpdateCatalogItemMutation } from 'src/services/catalog/useUpdateCatalogItemMutation'
@@ -132,12 +133,9 @@ const areCatalogItemsEqual = (
     return false
   }
 
-  const isLabelEqual = (current.LABEL ?? '') === (initial.LABEL ?? '')
-  const isValueEqual = (current.VALUE ?? '') === (initial.VALUE ?? '')
-
   return (
-    isLabelEqual &&
-    isValueEqual &&
+    (current.LABEL ?? '') === (initial.LABEL ?? '') &&
+    (current.VALUE ?? '') === (initial.VALUE ?? '') &&
     areExtraEntriesEqual(current.EXTRA, initial.EXTRA)
   )
 }
@@ -167,13 +165,14 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
   const { isFetching: isGetCatalogFetching } = useGetOneCatalogQuery(catalogId)
   const { mutateAsync: createCatalogue, isPending: isCreatePending } =
     useCreateCatalogueMutation()
+  const { mutateAsync: createCatalogItem, isPending: isCreateItemPending } =
+    useCreateCatalogItemMutation()
   const { mutateAsync: updateCatalogue, isPending: isUpdatePending } =
     useUpdateCatalogueMutation()
   const { mutateAsync: updateCatalogItem, isPending: isUpdateItemPending } =
     useUpdateCatalogItemMutation()
 
   const { catalog } = useCatalogStore()
-
   const isEditing = !!catalogId
 
   useEffect(() => {
@@ -186,17 +185,28 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
       })
 
       setInitialItems(cloneCatalogItems(normalizedItems))
-    } else {
-      setInitialItems([])
+      return
     }
-  }, [form, catalogId, catalog])
+
+    form.resetFields()
+    setInitialItems([])
+  }, [catalog, catalogId, form])
+
+  const refreshCatalog = async () => {
+    if (!catalogId) {
+      return
+    }
+
+    await queryClient.invalidateQueries({
+      queryKey: ['catalog', 'get-one-catalog', catalogId],
+    })
+  }
 
   const handleOnFinish = async () => {
     try {
       const { ITEMS = [], ...values } = await form.validateFields()
       const formItems = ITEMS as CatalogItemFormValue[]
       const formItemsSnapshot = cloneCatalogItems(formItems)
-
       const catalogName = (values.NAME ?? '').trim()
 
       const payload: Catalog = {
@@ -208,17 +218,20 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
         })) as Catalog['ITEMS'],
       }
 
-      let message = 'Catálogo creado exitosamente.'
+      let message = 'Catalogo creado exitosamente.'
+
       if (payload.CATALOG_ID) {
         await updateCatalogue(payload)
-        message = `Catálogo con id '${payload.CATALOG_ID}' actualizado exitosamente.`
-        setInitialItems(formItemsSnapshot)
+        message = `Catalogo con id '${payload.CATALOG_ID}' actualizado exitosamente.`
+        await refreshCatalog()
       } else {
         await createCatalogue(payload)
       }
 
+      setInitialItems(formItemsSnapshot)
+
       successNotification({
-        message: 'Operación exitosa',
+        message: 'Operacion exitosa',
         description: message,
       })
 
@@ -233,40 +246,33 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
       []) as CatalogItemFormValue[]
     const item = currentItems?.[index]
 
-    if (!item?.ITEM_ID) {
+    if (!catalogId || !catalog?.KEY || !item) {
       return
     }
 
+    const values = {
+      LABEL: item.LABEL,
+      ORDER: item.ORDER,
+      STATE: item.STATE,
+      VALUE: item.VALUE,
+      EXTRA: serializeExtraEntries(item.EXTRA),
+    }
+
     try {
-      await updateCatalogItem({
-        catalogId,
-        itemId: item.ITEM_ID,
-        values: {
-          LABEL: item?.LABEL,
-          ORDER: item?.ORDER,
-          STATE: item?.STATE,
-          VALUE: item?.VALUE,
-          EXTRA: serializeExtraEntries(item.EXTRA),
-        },
-      })
+      if (item.ITEM_ID) {
+        await updateCatalogItem({
+          catalogId,
+          itemId: item.ITEM_ID,
+          values,
+        })
+      } else {
+        await createCatalogItem({
+          key: catalog.KEY,
+          values,
+        })
+      }
 
-      setInitialItems((prevItems) => {
-        const updatedItems = cloneCatalogItems(prevItems)
-        const targetIndex = updatedItems.findIndex(
-          (baseItem) => baseItem.ITEM_ID === item.ITEM_ID
-        )
-        const indexToUpdate =
-          targetIndex >= 0 ? targetIndex : Math.min(index, updatedItems.length)
-
-        const clonedItem = cloneCatalogItems([item])[0]
-
-        if (indexToUpdate >= updatedItems.length) {
-          return [...updatedItems, clonedItem]
-        }
-
-        updatedItems[indexToUpdate] = clonedItem
-        return updatedItems
-      })
+      await refreshCatalog()
     } catch (error) {
       errorHandler(error)
     }
@@ -317,8 +323,9 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
     }
 
     if (!targetItem.ITEM_ID) {
-      const filteredItems = currentItems.filter((_, idx) => idx !== index)
-      form.setFieldsValue({ ITEMS: filteredItems })
+      form.setFieldsValue({
+        ITEMS: currentItems.filter((_, idx) => idx !== index),
+      })
       return
     }
 
@@ -340,16 +347,20 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
   }
 
   const handleRemoveItem = async (index: number, remove: RemoveFn) => {
-    const item = items[index]
+    const item = items?.[index]
+
+    if (!item) {
+      return
+    }
 
     const isActive = item.STATE === 'A'
 
-    if (item?.ITEM_ID) {
+    if (item.ITEM_ID) {
       return confirmModal({
-        title: 'Confirmación',
+        title: 'Confirmacion',
         content: (
           <p>
-            ¿Seguro que desea {isActive ? 'inhabilitar' : 'habilitar'} el item{' '}
+            Deseas {isActive ? 'inhabilitar' : 'habilitar'} el item{' '}
             <strong>"{item.LABEL}"</strong>?
           </p>
         ),
@@ -357,15 +368,13 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
           try {
             await updateCatalogItem({
               catalogId,
-              itemId: item.ITEM_ID,
+              itemId: item.ITEM_ID!,
               values: {
-                STATE: item.STATE === 'A' ? 'I' : 'A',
+                STATE: isActive ? 'I' : 'A',
               },
             })
 
-            queryClient.invalidateQueries({
-              queryKey: ['catalog', 'get-one-catalog', catalogId],
-            })
+            await refreshCatalog()
           } catch (error) {
             errorHandler(error)
           }
@@ -382,12 +391,13 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
       onOk={handleOnFinish}
       open={open}
       preventClose
-      title={'Formulario de Catálogo'}
+      title={'Formulario de Catalogo'}
       width={'50%'}
     >
       <CustomSpin
         spinning={
           isCreatePending ||
+          isCreateItemPending ||
           isUpdatePending ||
           isUpdateItemPending ||
           isGetCatalogFetching
@@ -404,16 +414,16 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
                 rules={[{ required: true }]}
                 {...labelColFullWidth}
               >
-                <CustomInput placeholder={'Nombre del catálogo'} />
+                <CustomInput placeholder={'Nombre del catalogo'} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Descripción'}
+                label={'Descripcion'}
                 name={'DESCRIPTION'}
                 {...labelColFullWidth}
               >
-                <CustomTextArea placeholder={'Descripción del catálogo'} />
+                <CustomTextArea placeholder={'Descripcion del catalogo'} />
               </CustomFormItem>
             </CustomCol>
 
@@ -428,7 +438,7 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
                   name={'ITEMS'}
                   initialValue={[{ EXTRA: [{ ORDER: 1 }] }]}
                   itemLabel={(index) => items?.[index]?.LABEL}
-                  addText={'Agregar Item'}
+                  addText={'Agregar item'}
                   onRemove={handleRemoveItem}
                   removeIcon={(index) => {
                     const item = items?.[index]
@@ -479,45 +489,43 @@ const CatalogForm: React.FC<CatalogFormProps> = ({
                             colon={false}
                             labelCol={{ span: 3 }}
                           >
-                            <>
-                              <CustomCollapseFormList
-                                form={form}
-                                addButtonPosition={'bottom'}
-                                disabled={!isActive}
-                                name={[field.name, 'EXTRA']}
-                                sort={'desc'}
-                                itemLabel={(index) =>
-                                  items?.[field.name]?.EXTRA?.[index]?.['key']
-                                }
-                              >
-                                {(subField) => (
-                                  <CustomSpace direction={'horizontal'}>
-                                    <CustomFormItem
-                                      hidden
-                                      name={[subField.name, 'ORDER']}
+                            <CustomCollapseFormList
+                              form={form}
+                              addButtonPosition={'bottom'}
+                              disabled={!isActive}
+                              name={[field.name, 'EXTRA']}
+                              sort={'desc'}
+                              itemLabel={(index) =>
+                                items?.[field.name]?.EXTRA?.[index]?.key
+                              }
+                            >
+                              {(subField) => (
+                                <CustomSpace direction={'horizontal'}>
+                                  <CustomFormItem
+                                    hidden
+                                    name={[subField.name, 'ORDER']}
+                                  />
+                                  <CustomFormItem
+                                    name={[subField.name, 'key']}
+                                    rules={[{ required: true }]}
+                                  >
+                                    <CustomInput
+                                      disabled={!isActive}
+                                      placeholder={'Clave'}
                                     />
-                                    <CustomFormItem
-                                      name={[subField.name, 'key']}
-                                      rules={[{ required: true }]}
-                                    >
-                                      <CustomInput
-                                        disabled={!isActive}
-                                        placeholder={'Clave'}
-                                      />
-                                    </CustomFormItem>
-                                    <CustomFormItem
-                                      name={[subField.name, 'value']}
-                                      rules={[{ required: true }]}
-                                    >
-                                      <CustomInput
-                                        disabled={!isActive}
-                                        placeholder={'Valor'}
-                                      />
-                                    </CustomFormItem>
-                                  </CustomSpace>
-                                )}
-                              </CustomCollapseFormList>
-                            </>
+                                  </CustomFormItem>
+                                  <CustomFormItem
+                                    name={[subField.name, 'value']}
+                                    rules={[{ required: true }]}
+                                  >
+                                    <CustomInput
+                                      disabled={!isActive}
+                                      placeholder={'Valor'}
+                                    />
+                                  </CustomFormItem>
+                                </CustomSpace>
+                              )}
+                            </CustomCollapseFormList>
                           </CustomFormItem>
                         </CustomCol>
 

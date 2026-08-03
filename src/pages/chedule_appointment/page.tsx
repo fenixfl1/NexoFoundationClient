@@ -1,23 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import dayjs, { Dayjs } from 'dayjs'
-import { Calendar, Badge } from 'antd'
-import CustomRow from 'src/components/custom/CustomRow'
-import CustomCol from 'src/components/custom/CustomCol'
-import CustomCard from 'src/components/custom/CustomCard'
+import { Badge, Calendar } from 'antd'
 import CustomButton from 'src/components/custom/CustomButton'
+import CustomCard from 'src/components/custom/CustomCard'
+import CustomCol from 'src/components/custom/CustomCol'
+import CustomDivider from 'src/components/custom/CustomDivider'
 import CustomList from 'src/components/custom/CustomList'
 import CustomListItem from 'src/components/custom/CustomListItem'
 import CustomListItemMeta from 'src/components/custom/CustomListItemMeta'
-import CustomTag from 'src/components/custom/CustomTag'
 import { CustomText } from 'src/components/custom/CustomParagraph'
-import CustomDivider from 'src/components/custom/CustomDivider'
+import CustomRow from 'src/components/custom/CustomRow'
 import CustomSpin from 'src/components/custom/CustomSpin'
-import { AdvancedCondition } from 'src/types/general'
-import { Appointment } from 'src/services/appointments/appointment.types'
-import { useAppointmentStore } from 'src/store/appointment.store'
-import { useGetAppointmentPaginationMutation } from 'src/services/appointments/useGetAppointmentPaginationMutation'
-import AppointmentForm from './components/AppointmentForm'
+import CustomTag from 'src/components/custom/CustomTag'
 import { useErrorHandler } from 'src/hooks/use-error-handler'
+import { Appointment } from 'src/services/appointments/appointment.types'
+import { useGetAppointmentPaginationMutation } from 'src/services/appointments/useGetAppointmentPaginationMutation'
+import { useAppointmentStore } from 'src/store/appointment.store'
+import { AdvancedCondition } from 'src/types/general'
+import AppointmentForm from './components/AppointmentForm'
 
 const statusMeta = {
   scheduled: { color: 'geekblue', label: 'Programada', badge: 'processing' },
@@ -26,7 +26,6 @@ const statusMeta = {
 } as const
 
 const SchedulePage: React.FC = () => {
-  const [currentMonth, setCurrentMonth] = useState(dayjs())
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Appointment>()
@@ -38,14 +37,7 @@ const SchedulePage: React.FC = () => {
 
   const handleFetch = useCallback(async () => {
     try {
-      // const start = currentMonth.startOf('month').startOf('week')
-      // const end = currentMonth.endOf('month').endOf('week')
       const condition: AdvancedCondition<Appointment>[] = [
-        // {
-        //   field: 'START_AT',
-        //   operator: 'BETWEEN',
-        //   value: [start.toISOString(), end.toISOString()],
-        // },
         {
           field: 'STATE',
           operator: '=',
@@ -57,7 +49,7 @@ const SchedulePage: React.FC = () => {
     } catch (error) {
       errorHandler(error)
     }
-  }, [currentMonth, getAppointments, errorHandler])
+  }, [errorHandler, getAppointments])
 
   useEffect(() => {
     handleFetch()
@@ -106,7 +98,7 @@ const SchedulePage: React.FC = () => {
             />
           </li>
         ))}
-        {events.length > 3 && <li>+{events.length - 3} más</li>}
+        {events.length > 3 && <li>+{events.length - 3} mas</li>}
       </ul>
     )
   }
@@ -114,23 +106,20 @@ const SchedulePage: React.FC = () => {
   return (
     <>
       <CustomSpin spinning={isPending}>
-        <CustomRow gutter={[16, 16]} align={'top'}>
+        <CustomRow gutter={[16, 16]} align="top">
           <CustomCol xs={24} md={16}>
             <CustomCard>
               <Calendar
                 value={selectedDate}
                 onSelect={(value) => setSelectedDate(value)}
-                onPanelChange={(value) => setCurrentMonth(dayjs(value))}
                 cellRender={dateCellRender}
               />
             </CustomCard>
           </CustomCol>
           <CustomCol xs={24} md={8}>
             <CustomCard>
-              <CustomRow justify={'space-between'} align={'middle'}>
-                <CustomText strong>
-                  {selectedDate.format('dddd, DD MMMM')}
-                </CustomText>
+              <CustomRow justify="space-between" align="middle">
+                <CustomText strong>{selectedDate.format('dddd, DD MMMM')}</CustomText>
                 <CustomButton type="primary" onClick={handleCreate}>
                   Nueva cita
                 </CustomButton>
@@ -138,7 +127,7 @@ const SchedulePage: React.FC = () => {
               <CustomDivider />
               <CustomList
                 dataSource={selectedAppointments}
-                locale={{ emptyText: 'No hay citas para este día.' }}
+                locale={{ emptyText: 'No hay citas para este dia.' }}
                 renderItem={(item) => (
                   <CustomListItem
                     key={item.APPOINTMENT_ID}
@@ -155,9 +144,7 @@ const SchedulePage: React.FC = () => {
                     <CustomListItemMeta
                       title={item.TITLE}
                       description={`${dayjs(item.START_AT).format('HH:mm')} ${
-                        item.END_AT
-                          ? `- ${dayjs(item.END_AT).format('HH:mm')}`
-                          : ''
+                        item.END_AT ? `- ${dayjs(item.END_AT).format('HH:mm')}` : ''
                       }`}
                     />
                     <CustomTag color={statusMeta[item.STATUS].color}>

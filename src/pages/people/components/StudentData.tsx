@@ -79,7 +79,7 @@ const StudentData: React.FC<StudentDataProps> = ({ form }) => {
         >
           <CustomInputNumber
             min={0}
-            max={4}
+            max={100}
             precision={2}
             step={0.01}
             style={{ width: '100%' }}

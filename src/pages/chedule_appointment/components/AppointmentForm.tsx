@@ -1,39 +1,39 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Form } from 'antd'
-import CustomModal from 'src/components/custom/CustomModal'
-import CustomForm from 'src/components/custom/CustomForm'
-import CustomFormItem from 'src/components/custom/CustomFormItem'
-import CustomInput from 'src/components/custom/CustomInput'
-import CustomTextArea from 'src/components/custom/CustomTextArea'
-import CustomSelect from 'src/components/custom/CustomSelect'
-import CustomDatePicker from 'src/components/custom/CustomDatePicker'
-import CustomRow from 'src/components/custom/CustomRow'
-import CustomCol from 'src/components/custom/CustomCol'
-import CustomDivider from 'src/components/custom/CustomDivider'
-import CustomSpin from 'src/components/custom/CustomSpin'
-import {
-  Appointment,
-  AppointmentPayload,
-} from 'src/services/appointments/appointment.types'
-import { useCreateAppointmentMutation } from 'src/services/appointments/useCreateAppointmentMutation'
-import { useUpdateAppointmentMutation } from 'src/services/appointments/useUpdateAppointmentMutation'
-import { useAppNotification } from 'src/context/NotificationContext'
-import { useErrorHandler } from 'src/hooks/use-error-handler'
 import dayjs, { Dayjs } from 'dayjs'
 import {
   defaultBreakpoints,
   formItemLayout,
   labelColFullWidth,
 } from 'src/config/breakpoints'
-import { useGetPaginatedPeopleMutation } from 'src/services/people/useGetPaginatedPeopleMutation'
-import { usePeopleStore } from 'src/store/people.store'
+import { useAppNotification } from 'src/context/NotificationContext'
+import CustomCol from 'src/components/custom/CustomCol'
+import CustomDatePicker from 'src/components/custom/CustomDatePicker'
+import CustomDivider from 'src/components/custom/CustomDivider'
+import CustomForm from 'src/components/custom/CustomForm'
+import CustomFormItem from 'src/components/custom/CustomFormItem'
+import CustomInput from 'src/components/custom/CustomInput'
+import CustomModal from 'src/components/custom/CustomModal'
+import CustomRow from 'src/components/custom/CustomRow'
+import CustomSelect from 'src/components/custom/CustomSelect'
+import CustomSpin from 'src/components/custom/CustomSpin'
+import CustomTextArea from 'src/components/custom/CustomTextArea'
+import { useErrorHandler } from 'src/hooks/use-error-handler'
 import useDebounce from 'src/hooks/use-debounce'
-import { useGetStudentPaginationMutation } from 'src/services/students/useGetStudentPaginationMutation'
-import { useStudentStore } from 'src/store/students.store'
+import {
+  Appointment,
+  AppointmentPayload,
+} from 'src/services/appointments/appointment.types'
+import { useCreateAppointmentMutation } from 'src/services/appointments/useCreateAppointmentMutation'
+import { useUpdateAppointmentMutation } from 'src/services/appointments/useUpdateAppointmentMutation'
+import { useGetPaginatedPeopleMutation } from 'src/services/people/useGetPaginatedPeopleMutation'
 import { useGetRequestPaginationMutation } from 'src/services/requests/useGetRequestPaginationMutation'
-import { useRequestStore } from 'src/store/requests.store'
-import { AdvancedCondition } from 'src/types/general'
 import { RequestItem } from 'src/services/requests/request.types'
+import { useGetStudentPaginationMutation } from 'src/services/students/useGetStudentPaginationMutation'
+import { usePeopleStore } from 'src/store/people.store'
+import { useRequestStore } from 'src/store/requests.store'
+import { useStudentStore } from 'src/store/students.store'
+import { AdvancedCondition } from 'src/types/general'
 
 const appointmentStatusOptions = [
   { label: 'Programada', value: 'scheduled' },
@@ -94,7 +94,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         START_AT: initialDate,
       })
     }
-  }, [appointment, open, initialDate])
+  }, [appointment, form, initialDate, open])
 
   const personOptions = useMemo(
     () =>
@@ -109,22 +109,23 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     () =>
       students.map((student) => ({
         value: student.STUDENT_ID,
-        label: `${student?.NAME} ${student?.LAST_NAME} (${student.UNIVERSITY})`,
+        label: `${student.NAME} ${student.LAST_NAME} (${student.UNIVERSITY})`,
       })),
     [students]
   )
 
   const requestOptions = useMemo(
     () =>
-      requests.map((req) => ({
-        value: req.REQUEST_ID,
-        label: `#${req.REQUEST_ID} - ${req.REQUEST_TYPE}`,
+      requests.map((request) => ({
+        value: request.REQUEST_ID,
+        label: `#${request.REQUEST_ID} - ${request.REQUEST_TYPE}`,
       })),
     [requests]
   )
 
   const fetchPeople = useCallback(() => {
     if (!open) return
+
     const condition: AdvancedCondition[] = [
       { field: 'STATE', operator: '=', value: 'A' },
     ]
@@ -138,10 +139,11 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
 
     getPeople({ page: 1, size: 20, condition })
-  }, [open, debouncePerson, getPeople])
+  }, [debouncePerson, getPeople, open])
 
   const fetchStudents = useCallback(() => {
     if (!open) return
+
     const condition: AdvancedCondition[] = [
       { field: 'STATE', operator: '=', value: 'A' },
     ]
@@ -155,10 +157,11 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
 
     getStudents({ page: 1, size: 20, condition })
-  }, [open, debounceStudent, getStudents])
+  }, [debounceStudent, getStudents, open])
 
   const fetchRequests = useCallback(() => {
     if (!open) return
+
     const condition: AdvancedCondition[] = []
 
     if (debounceRequest) {
@@ -170,7 +173,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     }
 
     getRequests({ page: 1, size: 20, condition })
-  }, [open, debounceRequest, getRequests])
+  }, [debounceRequest, getRequests, open])
 
   useEffect(fetchPeople, [fetchPeople])
   useEffect(fetchStudents, [fetchStudents])
@@ -235,13 +238,13 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
           APPOINTMENT_ID: appointment.APPOINTMENT_ID,
         } as Appointment)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Cita actualizada correctamente.',
         })
       } else {
         await createAppointment(payload)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Cita registrada correctamente.',
         })
       }
@@ -259,7 +262,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       open={open}
       onCancel={onClose}
       onOk={handleFinish}
-      width={'45%'}
+      width="45%"
       title={appointment ? 'Editar cita' : 'Nueva cita'}
     >
       <CustomSpin
@@ -273,16 +276,16 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       >
         <CustomDivider />
         <CustomForm form={form} {...formItemLayout}>
-          <CustomRow justify={'start'} gutter={[16, 8]}>
+          <CustomRow justify="start" gutter={[16, 8]}>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
-                label={'Persona'}
-                name={'PERSON_ID'}
+                label="Persona"
+                name="PERSON_ID"
                 rules={[{ required: true }]}
                 labelCol={{ span: 8 }}
               >
                 <CustomSelect
-                  placeholder={'Seleccionar persona'}
+                  placeholder="Seleccionar persona"
                   showSearch
                   filterOption={false}
                   options={personOptions}
@@ -294,12 +297,12 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
-                label={'Becario'}
-                name={'STUDENT_ID'}
+                label="Becario"
+                name="STUDENT_ID"
                 labelCol={{ span: 8 }}
               >
                 <CustomSelect
-                  placeholder={'Seleccionar becario'}
+                  placeholder="Seleccionar becario"
                   showSearch
                   filterOption={false}
                   options={studentOptions}
@@ -311,12 +314,12 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
-                label={'Solicitud'}
-                name={'REQUEST_ID'}
+                label="Solicitud"
+                name="REQUEST_ID"
                 labelCol={{ span: 8 }}
               >
                 <CustomSelect
-                  placeholder={'Seleccionar solicitud'}
+                  placeholder="Seleccionar solicitud"
                   showSearch
                   filterOption={false}
                   options={requestOptions}
@@ -328,30 +331,30 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Título'}
-                name={'TITLE'}
+                label="Titulo"
+                name="TITLE"
                 rules={[{ required: true }]}
                 {...labelColFullWidth}
               >
                 <CustomInput
-                  placeholder={'Ej: Seguimiento académico'}
+                  placeholder="Ej: Seguimiento academico"
                   showCount={false}
                 />
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Descripción'}
-                name={'DESCRIPTION'}
+                label="Descripcion"
+                name="DESCRIPTION"
                 {...labelColFullWidth}
               >
-                <CustomTextArea rows={3} placeholder={'Detalle de la cita'} />
+                <CustomTextArea rows={3} placeholder="Detalle de la cita" />
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
-                label={'Inicio'}
-                name={'START_AT'}
+                label="Inicio"
+                name="START_AT"
                 rules={[{ required: true }]}
               >
                 <CustomDatePicker showTime style={{ width: '100%' }} />
@@ -360,29 +363,47 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
                 {...labelColFullWidth}
-                label={'Fin'}
-                name={'END_AT'}
+                label="Fin"
+                name="END_AT"
+                dependencies={['START_AT']}
+                rules={[
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const startAt = getFieldValue('START_AT')
+
+                      if (!startAt || !value || !dayjs(value).isBefore(dayjs(startAt))) {
+                        return Promise.resolve()
+                      }
+
+                      return Promise.reject(
+                        new Error(
+                          'La fecha de fin no puede ser anterior a la fecha de inicio'
+                        )
+                      )
+                    },
+                  }),
+                ]}
               >
                 <CustomDatePicker showTime style={{ width: '100%' }} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Lugar'} name={'LOCATION'}>
-                <CustomInput placeholder={'Ej: Oficina, virtual, etc.'} />
+              <CustomFormItem label="Lugar" name="LOCATION">
+                <CustomInput placeholder="Ej: Oficina, virtual, etc." />
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Estado'} name={'STATUS'}>
+              <CustomFormItem label="Estado" name="STATUS">
                 <CustomSelect options={appointmentStatusOptions} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Notas'}
-                name={'NOTES'}
+                label="Notas"
+                name="NOTES"
                 {...labelColFullWidth}
               >
-                <CustomTextArea rows={2} placeholder={'Notas adicionales'} />
+                <CustomTextArea rows={2} placeholder="Notas adicionales" />
               </CustomFormItem>
             </CustomCol>
           </CustomRow>

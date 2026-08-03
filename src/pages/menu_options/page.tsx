@@ -50,6 +50,7 @@ const MenuOptionsPage: React.FC = () => {
       }
       return undefined
     }
+
     return id
       ? dfs(menuOptionsWithPermissions as OptionWithPermission[])
       : undefined
@@ -86,22 +87,11 @@ const MenuOptionsPage: React.FC = () => {
     return build(menuOptionsWithPermissions as OptionWithPermission[])
   }, [menuOptionsWithPermissions, search])
 
-  // const openCreateModal = () => {
-  //   form?.resetFields?.()
-  //   form?.setFieldsValue?.({
-  //     TYPE: 'item',
-  //     STATE_BOOL: true,
-  //     ORDER: 1,
-  //     PARENT_ID: selectedOption?.MENU_OPTION_ID,
-  //   })
-  //   setModalOpen(true)
-  // }
-
   const openEditModal = () => {
     if (!selectedOption?.MENU_OPTION_ID) return
+
     form?.setFieldsValue?.({
       ...selectedOption,
-      STATE_BOOL: selectedOption.STATE !== 'I',
       PARENT_ID: selectedOption.PARENT_ID ?? undefined,
     })
     toggleModalState()
@@ -109,6 +99,7 @@ const MenuOptionsPage: React.FC = () => {
 
   const handleToggleState = async () => {
     if (!selectedOption) return
+
     try {
       await updateMenuOption({
         MENU_OPTION_ID: selectedOption.MENU_OPTION_ID,
@@ -116,7 +107,7 @@ const MenuOptionsPage: React.FC = () => {
       })
       successNotification({
         message: 'Estado actualizado',
-        description: 'La opción fue actualizada correctamente.',
+        description: 'La opcion fue actualizada correctamente.',
       })
       fetchOptions({ condition: [], page: 1, size: 500 })
     } catch (error) {
@@ -156,6 +147,7 @@ const MenuOptionsPage: React.FC = () => {
           <CustomRow gutter={16} align={'top'}>
             <CustomCol xs={24} md={8}>
               <OptionTree
+                loading={isLoading}
                 treeData={treeData}
                 onSearch={setSearch}
                 selectedKey={selectedKey}

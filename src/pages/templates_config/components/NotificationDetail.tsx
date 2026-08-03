@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react'
-import CustomDrawer from 'src/components/custom/CustomDrawer'
-import CustomSpin from 'src/components/custom/CustomSpin'
+import CustomAlert from 'src/components/custom/CustomAlert'
 import CustomDescriptions from 'src/components/custom/CustomDescription'
 import CustomDivider from 'src/components/custom/CustomDivider'
-import CustomTag from 'src/components/custom/CustomTag'
-import CustomAlert from 'src/components/custom/CustomAlert'
+import CustomDrawer from 'src/components/custom/CustomDrawer'
 import CustomIceEditor from 'src/components/custom/CustomIceEditor'
+import CustomSpin from 'src/components/custom/CustomSpin'
+import CustomTag from 'src/components/custom/CustomTag'
 import { useGetNotificationQuery } from 'src/services/notifications/useGetNotificationQuery'
-import { notificationChannelOptions, notificationStatusOptions } from '../constants'
 import formatter from 'src/utils/formatter'
+import { notificationChannelOptions, notificationStatusOptions } from '../constants'
 
 interface NotificationDetailProps {
   notificationId?: number
@@ -21,7 +21,7 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
   open,
   onClose,
 }) => {
-  const { data, isFetching } = useGetNotificationQuery(notificationId, open)
+  const { data, error, isFetching } = useGetNotificationQuery(notificationId, open)
 
   const statusOption = notificationStatusOptions.find(
     (item) => item.value === data?.STATUS
@@ -40,9 +40,17 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
       width={'50%'}
       open={open}
       onClose={onClose}
-      title={`Detalle de notificación #${notificationId ?? ''}`}
+      title={`Detalle de notificacion #${notificationId ?? ''}`}
     >
       <CustomSpin spinning={isFetching}>
+        {error ? (
+          <CustomAlert
+            type="error"
+            showIcon
+            message="No se pudieron cargar los datos de la notificacion."
+          />
+        ) : null}
+
         <CustomDescriptions
           size="small"
           column={1}
@@ -76,6 +84,21 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
                 : 'Manual',
             },
             {
+              key: 'subject',
+              label: 'Asunto',
+              children: data?.SUBJECT || 'Sin asunto',
+            },
+            {
+              key: 'relatedEntity',
+              label: 'Entidad relacionada',
+              children: data?.RELATED_ENTITY || 'No definida',
+            },
+            {
+              key: 'relatedId',
+              label: 'Identificador relacionado',
+              children: data?.RELATED_ID || 'No definido',
+            },
+            {
               key: 'scheduled',
               label: 'Programada para',
               children: data?.SCHEDULED_AT
@@ -94,14 +117,19 @@ const NotificationDetail: React.FC<NotificationDetailProps> = ({
 
         {data?.ERROR_MESSAGE ? (
           <>
-            <CustomDivider>Último error</CustomDivider>
+            <CustomDivider>Ultimo error</CustomDivider>
+            <CustomAlert type="error" message={data.ERROR_MESSAGE} showIcon />
+          </>
+        ) : (
+          <>
+            <CustomDivider>Estado del envio</CustomDivider>
             <CustomAlert
-              type="error"
-              message={data.ERROR_MESSAGE}
+              type="success"
               showIcon
+              message="Esta notificacion no registra errores guardados."
             />
           </>
-        ) : null}
+        )}
 
         <CustomDivider>Contenido generado</CustomDivider>
         <CustomIceEditor

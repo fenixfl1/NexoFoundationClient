@@ -4,12 +4,28 @@ import {
   EditOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
-import { Form, DescriptionsProps, CollapseProps, App } from 'antd'
-import { useState, useCallback } from 'react'
+import { App, CollapseProps, DescriptionsProps, Form } from 'antd'
+import { ColumnsType } from 'antd/lib/table'
+import { useCallback, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useErrorHandler } from 'src/hooks/use-error-handler'
+import queryClient from 'src/lib/query-client'
 import { getSessionInfo } from 'src/lib/session'
+import { useChangePasswordMutation } from 'src/services/users/useChangePasswordMutation'
+import { useUpdateUserMutation } from 'src/services/users/useUpdateUserMutation'
+import { usePeopleStore } from 'src/store/people.store'
+import sleep from 'src/utils/sleep'
 import { logDate } from 'src/utils/data-utils'
+import { getBase64 } from 'src/utils/base64-helpers'
+import { getAvatarLink } from 'src/utils/get-avatar-link'
 import formatter from 'src/utils/formatter'
+import { ROLE_ADMIN_ID } from 'src/utils/role-path'
 import styled from 'styled-components'
+import { useGetPersonQuery } from 'src/services/people/useGetPersonQuery'
+import { Contact, ContactType } from 'src/services/contact/contact.types'
+import { Reference } from 'src/services/people/people.types'
+import ChangePasswordForm from './ChangePasswordForm'
+import ChangeProfilePicForm from './ChangeProfilePicForm'
 import ConditionalComponent from './ConditionalComponent'
 import CustomAvatar from './custom/CustomAvatar'
 import CustomButton from './custom/CustomButton'
@@ -22,25 +38,10 @@ import { customNotification } from './custom/customNotification'
 import { CustomText } from './custom/CustomParagraph'
 import CustomRow from './custom/CustomRow'
 import CustomSpace from './custom/CustomSpace'
+import CustomSpin from './custom/CustomSpin'
+import CustomTable from './custom/CustomTable'
 import CustomTag from './custom/CustomTag'
 import CustomTooltip from './custom/CustomTooltip'
-import { usePeopleStore } from 'src/store/people.store'
-import ChangePasswordForm from './ChangePasswordForm'
-import ChangeProfilePicForm from './ChangeProfilePicForm'
-import { useGetPersonQuery } from 'src/services/people/useGetPersonQuery'
-import { useSearchParams } from 'react-router-dom'
-import sleep from 'src/utils/sleep'
-import { getAvatarLink } from 'src/utils/get-avatar-link'
-import CustomTable from './custom/CustomTable'
-import { ColumnsType } from 'antd/lib/table'
-import { Contact, ContactType } from 'src/services/contact/contact.types'
-import { Reference } from 'src/services/people/people.types'
-import CustomSpin from './custom/CustomSpin'
-import { useChangePasswordMutation } from 'src/services/users/useChangePasswordMutation'
-import { useUpdateUserMutation } from 'src/services/users/useUpdateUserMutation'
-import { getBase64 } from 'src/utils/base64-helpers'
-import queryClient from 'src/lib/query-client'
-import { useErrorHandler } from 'src/hooks/use-error-handler'
 
 const states: Record<string, { label: string; color: string }> = {
   A: { label: 'Activo', color: 'green' },
@@ -95,6 +96,8 @@ const UserProfile: React.FC = () => {
   }
 
   const isMyProfile = Number(getSessionInfo().userId) === person.USER_ID
+  const isAdmin = String(getSessionInfo().roleId) === ROLE_ADMIN_ID
+  const canManagePassword = Boolean(person.USER_ID && (isMyProfile || isAdmin))
 
   const handleChangePassword = async () => {
     try {
@@ -102,12 +105,26 @@ const UserProfile: React.FC = () => {
 
       delete data.CONFIRM_PASSWORD
 
-      await changePassword(data)
+      if (isMyProfile) {
+        await changePassword(data)
+      } else {
+        delete data.OLD_PASSWORD
+
+        await updateUser({
+          USER_ID: person.USER_ID,
+          USERNAME: person.USERNAME,
+          PASSWORD: data.NEW_PASSWORD,
+        })
+      }
 
       notification.success({
         type: 'success',
-        message: 'Contraseña actualizada',
-        description: 'Tu contraseña ha sido actualizada con éxito',
+        message: isMyProfile
+          ? 'Contrasena actualizada'
+          : 'Credenciales actualizadas',
+        description: isMyProfile
+          ? 'Tu contrasena ha sido actualizada con exito.'
+          : 'La nueva contrasena fue asignada correctamente.',
       })
       form.resetFields()
       setChangePasswordModal(false)
@@ -124,10 +141,17 @@ const UserProfile: React.FC = () => {
       let url = data.AVATAR_URL
 
       if (file) {
-        url = await getBase64(file.fileList[0])
+        const uploadedFile = Array.isArray(file)
+          ? file[0]
+          : Array.isArray(file?.fileList)
+            ? file.fileList[0]
+            : file
+
+        url = await getBase64(uploadedFile)
       }
 
       delete data.AVATAR_URL
+      delete data.AVATAR_FILE
       delete data.PREFIX
 
       data.AVATAR = url
@@ -138,14 +162,14 @@ const UserProfile: React.FC = () => {
       sessionStorage.setItem('avatar', url)
       form.resetFields()
       customNotification({
-        message: 'Operación Exitosa',
-        description: 'Foto de perfil actualizada con éxito.',
+        message: 'Operacion exitosa',
+        description: 'Foto de perfil actualizada con exito.',
       })
       setShowChangeProfileOptions(false)
     } catch (error) {
       errorHandler(error)
     }
-  }, [file, form])
+  }, [errorHandler, file, form, updateUser])
 
   const personalInfoItems: DescriptionsProps['items'] = [
     {
@@ -156,7 +180,7 @@ const UserProfile: React.FC = () => {
     },
     {
       key: 'user_id',
-      label: 'Código',
+      label: 'Codigo',
       children: person.PERSON_ID,
     },
     {
@@ -183,25 +207,32 @@ const UserProfile: React.FC = () => {
     },
     {
       key: 'PASSWORD',
-      label: isMyProfile ? 'Contraseña' : '',
-      children: (
-        <ConditionalComponent condition={isMyProfile} fallback={' '}>
-          <CustomSpace direction={'horizontal'} size={2}>
-            <span>**********</span>
-            <CustomTooltip title={'Cambiar contraseña'} placement={'right'}>
-              <CustomButton
-                type={'link'}
-                icon={<EditOutlined />}
-                onClick={() => setChangePasswordModal(true)}
-              />
-            </CustomTooltip>
-          </CustomSpace>
-        </ConditionalComponent>
+      label: canManagePassword ? 'Contrasena' : '',
+      children: canManagePassword ? (
+        <CustomSpace direction={'horizontal'} size={2}>
+          <span>**********</span>
+          <CustomTooltip
+            title={
+              isMyProfile
+                ? 'Cambiar contrasena'
+                : 'Asignar nueva contrasena'
+            }
+            placement={'right'}
+          >
+            <CustomButton
+              type={'link'}
+              icon={<EditOutlined />}
+              onClick={() => setChangePasswordModal(true)}
+            />
+          </CustomTooltip>
+        </CustomSpace>
+      ) : (
+        ' '
       ),
     },
     {
       key: 'EMAIL',
-      label: 'Correo electrónico',
+      label: 'Correo electronico',
       children: person.EMAIL,
     },
     {
@@ -216,7 +247,7 @@ const UserProfile: React.FC = () => {
     },
     {
       key: 'PHONE',
-      label: 'Teléfono',
+      label: 'Telefono',
       children: formatter({
         value: person.PHONE?.replace(/\D/g, ''),
         format: 'phone',
@@ -229,23 +260,19 @@ const UserProfile: React.FC = () => {
     },
     {
       key: 'GENDER',
-      label: 'Género',
+      label: 'Genero',
       children: person.GENDER === 'M' ? 'Masculino' : 'Femenino',
     },
     {
       key: 'ADDRESS',
-      label: 'Dirección',
+      label: 'Direccion',
       children: person.ADDRESS,
       span: 2,
     },
     {
       key: 'ROLES',
       label: 'Rol',
-      children: person.ROLE_NAME ? (
-        <CustomTag>{person.ROLE_NAME}</CustomTag>
-      ) : (
-        'N/A'
-      ),
+      children: person.ROLE_NAME ? <CustomTag>{person.ROLE_NAME}</CustomTag> : 'N/A',
     },
   ]
 
@@ -253,7 +280,7 @@ const UserProfile: React.FC = () => {
     {
       dataIndex: 'CONTACT_ID',
       key: 'CONTACT_ID',
-      title: 'Código',
+      title: 'Codigo',
       align: 'center',
       width: '7%',
     },
@@ -287,7 +314,7 @@ const UserProfile: React.FC = () => {
     {
       dataIndex: 'REFERENCE_ID',
       key: 'REFERENCE_ID',
-      title: 'Código',
+      title: 'Codigo',
       width: '7%',
       align: 'center',
     },
@@ -299,12 +326,12 @@ const UserProfile: React.FC = () => {
     {
       dataIndex: 'RELATIONSHIP',
       key: 'RELATIONSHIP',
-      title: 'Relación',
+      title: 'Relacion',
     },
     {
       dataIndex: 'PHONE',
       key: 'PHONE',
-      title: 'Teléfono',
+      title: 'Telefono',
       render: (value) => formatter({ value, format: 'phone' }),
     },
     {
@@ -317,7 +344,7 @@ const UserProfile: React.FC = () => {
   const items: CollapseProps['items'] = [
     {
       key: 1,
-      label: <CustomText strong>Información personal</CustomText>,
+      label: <CustomText strong>Informacion personal</CustomText>,
       children: <CustomDescriptions column={2} items={personalInfoItems} />,
     },
     {
@@ -426,7 +453,17 @@ const UserProfile: React.FC = () => {
           open={changePasswordModal}
           onClose={() => setChangePasswordModal(false)}
           form={form}
-          loading={changePasswordIsPending}
+          loading={changePasswordIsPending || isUpdateUserPending}
+          requireCurrentPassword={isMyProfile}
+          title={
+            isMyProfile
+              ? 'Cambiar contrasena'
+              : `Asignar contrasena a @${person.USERNAME}`
+          }
+          submitLabel={
+            isMyProfile ? 'Cambiar contrasena' : 'Guardar nueva contrasena'
+          }
+          username={person.USERNAME}
         />
       </ConditionalComponent>
 

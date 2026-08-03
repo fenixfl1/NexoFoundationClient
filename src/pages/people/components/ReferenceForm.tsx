@@ -15,14 +15,9 @@ import {
   formItemLayout,
   labelColFullWidth,
 } from 'src/config/breakpoints'
-import { useCustomModal } from 'src/hooks/use-custom-modal'
 import { useErrorHandler } from 'src/hooks/use-error-handler'
-import { useParams } from 'react-router-dom'
 import { useGetCatalog } from 'src/hooks/use-get-catalog'
-import { useCreateReferenceMutation } from 'src/services/people/useCreateReferenceMutation'
-import { usePeopleStore } from 'src/store/people.store'
 import { Reference } from 'src/services/people/people.types'
-import { CustomParagraph } from 'src/components/custom/CustomParagraph'
 import { normalizeNumbers } from 'src/utils/form-value-normalize'
 
 interface FormValue {
@@ -34,6 +29,8 @@ interface ReferenceFormProps {
   open: boolean
   onClose?: () => void
   onOk?: () => void
+  initialValue?: Reference
+  submitting?: boolean
 }
 
 const ReferenceForm: React.FC<ReferenceFormProps> = ({
@@ -41,60 +38,41 @@ const ReferenceForm: React.FC<ReferenceFormProps> = ({
   open,
   onClose,
   onOk,
+  initialValue,
+  submitting = false,
 }) => {
   const [errorHandler] = useErrorHandler()
-  const { confirmModal } = useCustomModal()
-
-  const { mutateAsync: createReference, isPending: isCreatePending } =
-    useCreateReferenceMutation()
-
-  const { person } = usePeopleStore()
 
   const [relationships] = useGetCatalog('ID_LIST_RELATIONSHIPS')
 
-  const { action } = useParams()
-
-  const isEditing = action === 'edit'
-
   const handleCreate = async () => {
     try {
-      const values = await form.validateFields()
-
-      values.REFERENCE.PHONE = values.REFERENCE.PHONE.replace(/\D/g, '')
-
-      if (isEditing) {
-        await createReference(values.REFERENCE)
-      }
+      await form.validateFields()
       onOk?.()
     } catch (error) {
       errorHandler(error)
     }
   }
 
-  const handleClose = () => {
-    confirmModal({
-      title: 'Confirmación',
-      content: 'Seguro que desea cerrar la ventana?',
-      onOk: onClose,
+  React.useEffect(() => {
+    if (!open) return
+
+    form.setFieldsValue({
+      REFERENCE: initialValue ?? ({} as Reference),
     })
-  }
+  }, [form, initialValue, open])
 
   return (
     <CustomModal
-      onCancel={handleClose}
+      onCancel={onClose}
       onOk={handleCreate}
       open={open}
       title={'Formulario de Referencias'}
       width={'45%'}
     >
-      <CustomSpin spinning={isCreatePending}>
+      <CustomSpin spinning={submitting}>
         <CustomForm form={form} {...formItemLayout}>
-          <CustomFormItem
-            hidden
-            name={['REFERENCE', 'PERSON_ID']}
-            rules={[{ required: isEditing }]}
-            initialValue={person?.PERSON_ID}
-          />
+          <CustomFormItem hidden name={['REFERENCE', 'PERSON_ID']} />
           <CustomRow justify={'start'}>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
@@ -158,22 +136,6 @@ const ReferenceForm: React.FC<ReferenceFormProps> = ({
                 {...labelColFullWidth}
               >
                 <CustomTextArea placeholder={'Nota adicional'} />
-              </CustomFormItem>
-            </CustomCol>
-
-            <CustomCol xs={24}>
-              <CustomFormItem
-                hidden
-                shouldUpdate
-                label={' '}
-                colon={false}
-                {...labelColFullWidth}
-              >
-                {() => (
-                  <CustomParagraph>
-                    <pre>{JSON.stringify(form.getFieldsValue(), null, 2)}</pre>
-                  </CustomParagraph>
-                )}
               </CustomFormItem>
             </CustomCol>
           </CustomRow>

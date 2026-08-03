@@ -76,7 +76,7 @@ const DisbursementForm: React.FC<DisbursementFormProps> = ({
     () =>
       scholarships.map((item) => ({
         value: item.SCHOLARSHIP_ID,
-        label: `${item.NAME} · ${item.STUDENT_NAME ?? ''} ${
+        label: `${item.NAME} - ${item.STUDENT_NAME ?? ''} ${
           item.STUDENT_LAST_NAME ?? ''
         }`,
       })),
@@ -85,6 +85,7 @@ const DisbursementForm: React.FC<DisbursementFormProps> = ({
 
   const fetchScholarships = useCallback(() => {
     if (!open) return
+
     const condition: AdvancedCondition[] = [
       { field: 'STATE', operator: '=', value: 'A' },
     ]
@@ -116,13 +117,13 @@ const DisbursementForm: React.FC<DisbursementFormProps> = ({
           DISBURSEMENT_ID: disbursement.DISBURSEMENT_ID,
         } as Disbursement)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Desembolso actualizado correctamente.',
         })
       } else {
         await createDisbursement(payload)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Desembolso registrado correctamente.',
         })
       }
@@ -190,7 +191,7 @@ const DisbursementForm: React.FC<DisbursementFormProps> = ({
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Método'} name={'METHOD'}>
+              <CustomFormItem label={'Metodo'} name={'METHOD'}>
                 <CustomInput placeholder={'Transferencia, cheque...'} />
               </CustomFormItem>
             </CustomCol>

@@ -155,13 +155,16 @@ const Page: React.FC = () => {
     navigate(-1)
   }
 
-  const handleCreateReference = (reference: Reference) => {
+  const handleReferencesChange = (references: Reference[]) => {
     setFormState((prev) => {
-      const references = prev?.REFERENCES ?? []
+      const currentReferences =
+        references.length || !person?.REFERENCES?.length
+          ? references
+          : (person.REFERENCES ?? [])
 
       return {
         ...(prev ?? {}),
-        REFERENCES: [...references, reference],
+        REFERENCES: currentReferences,
       } as never
     })
   }
@@ -200,18 +203,18 @@ const Page: React.FC = () => {
     }
 
     if (isEditing && Array.isArray(person.STUDENT_DOCUMENTS)) {
-      return person.STUDENT_DOCUMENTS
-        .filter((doc) => (doc.STATE ?? 'A') === 'A' && !!doc.FILE_BASE64)
-        .map((doc) => ({
-          DOCUMENT_TYPE: doc.DOCUMENT_TYPE,
-          DESCRIPTION: doc.DESCRIPTION,
-          FILE_BASE64: doc.FILE_BASE64,
-          FILE_NAME: doc.FILE_NAME,
-          MIME_TYPE: doc.MIME_TYPE,
-          SIGNED_BASE64: doc.SIGNED_BASE64,
-          SIGNED_AT: doc.SIGNED_AT,
-          STATE: 'A',
-        }))
+      return person.STUDENT_DOCUMENTS.filter(
+        (doc) => (doc.STATE ?? 'A') === 'A' && !!doc.FILE_BASE64
+      ).map((doc) => ({
+        DOCUMENT_TYPE: doc.DOCUMENT_TYPE,
+        DESCRIPTION: doc.DESCRIPTION,
+        FILE_BASE64: doc.FILE_BASE64,
+        FILE_NAME: doc.FILE_NAME,
+        MIME_TYPE: doc.MIME_TYPE,
+        SIGNED_BASE64: doc.SIGNED_BASE64,
+        SIGNED_AT: doc.SIGNED_AT,
+        STATE: 'A',
+      }))
     }
 
     return []
@@ -273,16 +276,18 @@ const Page: React.FC = () => {
     {
       key: StepKeys.REFERENCES,
       title: 'Referencias',
-      content: <References onCreate={handleCreateReference} />,
+      content: (
+        <References
+          value={formState?.REFERENCES ?? person.REFERENCES ?? []}
+          onChange={handleReferencesChange}
+        />
+      ),
     },
   ]
 
   const handleCreatePerson = async () => {
     try {
       const values = await form.validateFields()
-
-      // eslint-disable-next-line no-console
-      console.log({ formState, values })
 
       if (!formState) {
         throw new Error('Datos incompletos en el formulario.')
@@ -447,7 +452,7 @@ const Page: React.FC = () => {
             return handleResetState()
           }
 
-          handleCreatePerson()
+          await handleCreatePerson()
           return
         }
         default:
@@ -476,7 +481,7 @@ const Page: React.FC = () => {
       content: (
         <div>
           <p>
-            Si cancelas ahora perderás cualquier información que halla
+            Si cancelas ahora perderás cualquier información que haya
             introducido. <br />
           </p>
           <p>¿Desea cancelar?</p>

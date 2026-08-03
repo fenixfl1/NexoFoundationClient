@@ -1,8 +1,11 @@
 export interface User {
   USER_ID: number
+  PERSON_ID?: number
+  ROLE_ID?: number
   AVATAR: string
   USERNAME: string
   STATE: string
+  PASSWORD?: string
   ROLES: string
   FULL_NAME: string
 }

@@ -131,7 +131,7 @@ const RequestsPage: React.FC = () => {
     {
       dataIndex: 'UNIVERSITY',
       key: 'UNIVERSITY',
-      title: 'Institución',
+      title: 'Universidad',
       render: (_, record) => (
         <CustomSpace direction="vertical" size={0}>
           <span>{record.UNIVERSITY}</span>

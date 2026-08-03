@@ -32,13 +32,9 @@ import CustomTimeline from 'src/components/custom/CustomTimeline'
 import { useErrorHandler } from 'src/hooks/use-error-handler'
 import useDebounce from 'src/hooks/use-debounce'
 import { getSessionInfo } from 'src/lib/session'
-import {
-  AppointmentStatus,
-} from 'src/services/appointments/appointment.types'
+import { AppointmentStatus } from 'src/services/appointments/appointment.types'
 import { useGetAppointmentPaginationMutation } from 'src/services/appointments/useGetAppointmentPaginationMutation'
-import {
-  FollowUpStatus,
-} from 'src/services/follow-up/follow-up.types'
+import { FollowUpStatus } from 'src/services/follow-up/follow-up.types'
 import { useGetFollowUpPaginationMutation } from 'src/services/follow-up/useGetFollowUpPaginationMutation'
 import { CourseGrade } from 'src/services/grades/grades.types'
 import { useGetTermPaginationMutation } from 'src/services/grades/useGetTermPaginationMutation'
@@ -208,6 +204,9 @@ const formatDate = (value?: string | null) =>
 const formatDateTime = (value?: string | null) =>
   value ? formatter({ value, format: 'datetime' }) : 'N/A'
 
+const getStudentOptionLabel = (student: Pick<Student, 'NAME' | 'LAST_NAME' | 'UNIVERSITY'>) =>
+  `${student.NAME} ${student.LAST_NAME} - ${student.UNIVERSITY}`
+
 const Page: React.FC = () => {
   const { roleId, personId } = getSessionInfo()
   const isStudentRole = String(roleId) === ROLE_STUDENT_ID
@@ -235,7 +234,7 @@ const Page: React.FC = () => {
   const studentOptions = useMemo(() => {
     const options = students.map((student) => ({
       value: student.STUDENT_ID,
-      label: `${student.NAME} ${student.LAST_NAME} · ${student.UNIVERSITY}`,
+      label: getStudentOptionLabel(student),
     }))
 
     if (
@@ -244,7 +243,7 @@ const Page: React.FC = () => {
     ) {
       options.unshift({
         value: selectedStudent.STUDENT_ID,
-        label: `${selectedStudent.NAME} ${selectedStudent.LAST_NAME} · ${selectedStudent.UNIVERSITY}`,
+        label: getStudentOptionLabel(selectedStudent),
       })
     }
 
@@ -422,18 +421,18 @@ const Page: React.FC = () => {
       {
         key: 'average',
         icon: <LineChartOutlined />,
-        title: 'Índice acumulado',
+        title: 'Indice acumulado',
         value: Number(selectedStudent?.ACADEMIC_AVERAGE ?? 0).toFixed(2),
         hint: 'Promedio ponderado actualizado',
       },
       {
         key: 'terms',
         icon: <BookOutlined />,
-        title: 'Períodos cargados',
+        title: 'Periodos cargados',
         value: sortedTerms.length,
         hint: latestTerm
-          ? `Último período: ${latestTerm.PERIOD}`
-          : 'Aún no se registran períodos',
+          ? `Ultimo periodo: ${latestTerm.PERIOD}`
+          : 'Aun no se registran periodos',
       },
       {
         key: 'followups',
@@ -441,13 +440,13 @@ const Page: React.FC = () => {
         title: 'Seguimientos',
         value: sortedFollowUps.length,
         hint: lastFollowUp
-          ? `Último: ${formatDate(lastFollowUp.FOLLOW_UP_DATE)}`
-          : 'Sin seguimientos todavía',
+          ? `Ultimo: ${formatDate(lastFollowUp.FOLLOW_UP_DATE)}`
+          : 'Sin seguimientos todavia',
       },
       {
         key: 'appointments',
         icon: <CalendarOutlined />,
-        title: 'Próxima cita',
+        title: 'Proxima cita',
         value: nextAppointment
           ? formatDate(nextAppointment.START_AT as string)
           : 'Pendiente',
@@ -456,7 +455,14 @@ const Page: React.FC = () => {
           : 'No hay citas futuras agendadas',
       },
     ],
-    [lastFollowUp, latestTerm, nextAppointment, selectedStudent, sortedFollowUps.length, sortedTerms.length]
+    [
+      lastFollowUp,
+      latestTerm,
+      nextAppointment,
+      selectedStudent,
+      sortedFollowUps.length,
+      sortedTerms.length,
+    ]
   )
 
   const alerts = useMemo<AcademicAlert[]>(() => {
@@ -472,31 +478,31 @@ const Page: React.FC = () => {
       items.push({
         key: 'missing_terms',
         type: 'warning',
-        title: 'Sin períodos académicos cargados',
+        title: 'Sin periodos academicos cargados',
         description:
-          'Aún no se han registrado calificaciones por período para este becario.',
+          'Aun no se han registrado calificaciones por periodo para este becario.',
       })
     } else if (average < 70) {
       items.push({
         key: 'average_risk',
         type: 'error',
-        title: 'Índice académico en riesgo',
+        title: 'Indice academico en riesgo',
         description:
-          'El promedio acumulado está por debajo de 70. Conviene revisar el plan de acompañamiento.',
+          'El promedio acumulado esta por debajo de 70. Conviene revisar el plan de acompanamiento.',
       })
     } else if (average < 80) {
       items.push({
         key: 'average_attention',
         type: 'warning',
-        title: 'Índice académico bajo observación',
+        title: 'Indice academico bajo observacion',
         description:
-          'El promedio acumulado está por debajo de 80 y requiere seguimiento cercano.',
+          'El promedio acumulado esta por debajo de 80 y requiere seguimiento cercano.',
       })
     } else {
       items.push({
         key: 'average_ok',
         type: 'success',
-        title: 'Desempeño académico estable',
+        title: 'Desempeno academico estable',
         description:
           'El promedio acumulado se encuentra en un rango saludable para la beca.',
       })
@@ -508,7 +514,7 @@ const Page: React.FC = () => {
         type: 'info',
         title: 'Sin seguimiento registrado',
         description:
-          'Todavía no hay reuniones o notas de seguimiento académico registradas.',
+          'Todavia no hay reuniones o notas de seguimiento academico registradas.',
       })
     } else if (
       dayjs(lastFollowUp.FOLLOW_UP_DATE).isBefore(dayjs().subtract(45, 'day'))
@@ -518,7 +524,7 @@ const Page: React.FC = () => {
         type: 'warning',
         title: 'Seguimiento desactualizado',
         description:
-          'Han pasado más de 45 días desde el último seguimiento registrado.',
+          'Han pasado mas de 45 dias desde el ultimo seguimiento registrado.',
       })
     }
 
@@ -526,30 +532,35 @@ const Page: React.FC = () => {
       items.push({
         key: 'appointment_missing',
         type: 'info',
-        title: 'Sin próxima cita programada',
+        title: 'Sin proxima cita programada',
         description:
-          'No hay citas académicas futuras registradas para este becario.',
+          'No hay citas academicas futuras registradas para este becario.',
       })
     }
 
     const coursesAtRisk =
       latestTermDetail?.COURSES?.filter(
         (course) =>
-          course.STATUS === 'failed' ||
-          Number(course.GRADE) < 70
+          course.STATUS === 'failed' || Number(course.GRADE) < 70
       ) ?? []
 
     if (coursesAtRisk.length) {
       items.push({
         key: 'courses_risk',
         type: 'warning',
-        title: 'Materias con alerta académica',
-        description: `El último período contiene ${coursesAtRisk.length} materia(s) con nota baja o reprobada.`,
+        title: 'Materias con alerta academica',
+        description: `El ultimo periodo contiene ${coursesAtRisk.length} materia(s) con nota baja o reprobada.`,
       })
     }
 
     return items
-  }, [lastFollowUp, latestTermDetail?.COURSES, nextAppointment, selectedStudent, sortedTerms.length])
+  }, [
+    lastFollowUp,
+    latestTermDetail?.COURSES,
+    nextAppointment,
+    selectedStudent,
+    sortedTerms.length,
+  ])
 
   const studentInfoItems = useMemo(
     () => [
@@ -565,7 +576,7 @@ const Page: React.FC = () => {
       },
       {
         key: 'university',
-        label: 'Institución',
+        label: 'Universidad',
         children: selectedStudent?.UNIVERSITY || 'Pendiente de asignar',
       },
       {
@@ -589,7 +600,8 @@ const Page: React.FC = () => {
         children: selectedStudent?.SCHOLARSHIP_STATUS ? (
           <CustomTag
             color={
-              scholarshipStatusMeta[selectedStudent.SCHOLARSHIP_STATUS]?.color as never
+              scholarshipStatusMeta[selectedStudent.SCHOLARSHIP_STATUS]
+                ?.color as never
             }
           >
             {scholarshipStatusMeta[selectedStudent.SCHOLARSHIP_STATUS]?.label}
@@ -615,7 +627,8 @@ const Page: React.FC = () => {
             </CustomText>
             {followUp.NEXT_APPOINTMENT ? (
               <CustomText type="secondary">
-                Próxima cita sugerida: {formatDateTime(followUp.NEXT_APPOINTMENT)}
+                Proxima cita sugerida:{' '}
+                {formatDateTime(followUp.NEXT_APPOINTMENT)}
               </CustomText>
             ) : null}
           </CustomSpace>
@@ -634,15 +647,17 @@ const Page: React.FC = () => {
             <CustomCol xs={24} xl={16}>
               <CustomSpace direction="vertical" size={6}>
                 <CustomText type="secondary">
-                  {isStudentRole ? 'Tu panorama académico' : 'Consulta académica'}
+                  {isStudentRole
+                    ? 'Tu panorama academico'
+                    : 'Consulta academica'}
                 </CustomText>
                 <CustomTitle level={3} style={{ margin: 0 }}>
                   {selectedStudent
                     ? `${selectedStudent.NAME} ${selectedStudent.LAST_NAME}`
-                    : 'Información académica'}
+                    : 'Informacion academica'}
                 </CustomTitle>
                 <CustomParagraph type="secondary" style={{ marginBottom: 0 }}>
-                  Consolida calificaciones, índice acumulado, citas y
+                  Consolida calificaciones, indice acumulado, citas y
                   seguimientos en una sola vista.
                 </CustomParagraph>
               </CustomSpace>
@@ -650,13 +665,17 @@ const Page: React.FC = () => {
 
             {!isStudentRole ? (
               <CustomCol xs={24} xl={8}>
-                <CustomSpace direction="vertical" size={6} style={{ width: '100%' }}>
+                <CustomSpace
+                  direction="vertical"
+                  size={6}
+                  style={{ width: '100%' }}
+                >
                   <CustomText strong>Seleccionar becario</CustomText>
                   <CustomSelect
                     showSearch
                     filterOption={false}
                     value={selectedStudentId}
-                    placeholder="Buscar por nombre, documento o institución"
+                    placeholder="Buscar por nombre, documento o universidad"
                     options={studentOptions}
                     onSearch={setStudentSearch}
                     onChange={(value) => {
@@ -694,7 +713,7 @@ const Page: React.FC = () => {
           <CustomResult
             status="info"
             title="Sin becario seleccionado"
-            subTitle="Selecciona un becario para consultar su avance académico."
+            subTitle="Selecciona un becario para consultar su avance academico."
           />
         ) : null}
 
@@ -733,7 +752,7 @@ const Page: React.FC = () => {
 
               <CustomCol xs={24} xl={10}>
                 <PanelCard>
-                  <CustomTitle level={4}>Próxima interacción</CustomTitle>
+                  <CustomTitle level={4}>Proxima interaccion</CustomTitle>
                   {nextAppointment ? (
                     <CustomSpace direction="vertical" size={10}>
                       <CustomTag
@@ -766,7 +785,7 @@ const Page: React.FC = () => {
                       <CustomAlert
                         type="info"
                         showIcon
-                        message="No hay citas académicas futuras."
+                        message="No hay citas academicas futuras."
                       />
                     </EmptyPanel>
                   )}
@@ -777,7 +796,7 @@ const Page: React.FC = () => {
             <CustomRow gutter={[16, 16]} align="stretch">
               <CustomCol xs={24} xl={14}>
                 <PanelCard>
-                  <CustomTitle level={4}>Historial de períodos</CustomTitle>
+                  <CustomTitle level={4}>Historial de periodos</CustomTitle>
                   {sortedTerms.length ? (
                     <CustomList
                       dataSource={sortedTerms}
@@ -796,18 +815,19 @@ const Page: React.FC = () => {
                                         : 'red'
                                   }
                                 >
-                                  Índice {Number(term.TERM_INDEX).toFixed(2)}
+                                  Indice {Number(term.TERM_INDEX).toFixed(2)}
                                 </CustomTag>
                               </CustomSpace>
                             }
                             description={
                               <CustomSpace direction="vertical" size={0}>
                                 <CustomText type="secondary">
-                                  {term.UNIVERSITY || selectedStudent.UNIVERSITY} ·{' '}
-                                  {term.CAREER || selectedStudent.CAREER}
+                                  {term.UNIVERSITY ||
+                                    selectedStudent.UNIVERSITY}{' '}
+                                  - {term.CAREER || selectedStudent.CAREER}
                                 </CustomText>
                                 <CustomText type="secondary">
-                                  Créditos: {term.TOTAL_CREDITS}
+                                  Creditos: {term.TOTAL_CREDITS}
                                 </CustomText>
                               </CustomSpace>
                             }
@@ -820,7 +840,7 @@ const Page: React.FC = () => {
                       <CustomAlert
                         type="warning"
                         showIcon
-                        message="No hay períodos académicos registrados."
+                        message="No hay periodos academicos registrados."
                       />
                     </EmptyPanel>
                   )}
@@ -837,7 +857,7 @@ const Page: React.FC = () => {
                       <CustomAlert
                         type="info"
                         showIcon
-                        message="No hay seguimientos registrados todavía."
+                        message="No hay seguimientos registrados todavia."
                       />
                     </EmptyPanel>
                   )}
@@ -848,13 +868,17 @@ const Page: React.FC = () => {
             <CustomRow gutter={[16, 16]} align="stretch">
               <CustomCol xs={24} xl={14}>
                 <PanelCard>
-                  <CustomTitle level={4}>Detalle del último período</CustomTitle>
+                  <CustomTitle level={4}>Detalle del ultimo periodo</CustomTitle>
                   {latestTerm ? (
-                    <CustomSpace direction="vertical" size={14} style={{ width: '100%' }}>
+                    <CustomSpace
+                      direction="vertical"
+                      size={14}
+                      style={{ width: '100%' }}
+                    >
                       <CustomSpace size={8} wrap>
                         <CustomTag color="geekblue">{latestTerm.PERIOD}</CustomTag>
                         <CustomTag color="purple">
-                          Créditos {latestTerm.TOTAL_CREDITS}
+                          Creditos {latestTerm.TOTAL_CREDITS}
                         </CustomTag>
                         <CustomTag
                           color={
@@ -865,7 +889,7 @@ const Page: React.FC = () => {
                                 : 'red'
                           }
                         >
-                          Índice {Number(latestTerm.TERM_INDEX).toFixed(2)}
+                          Indice {Number(latestTerm.TERM_INDEX).toFixed(2)}
                         </CustomTag>
                       </CustomSpace>
 
@@ -874,13 +898,14 @@ const Page: React.FC = () => {
                           {latestCourses.map((course: CourseGrade) => (
                             <CourseRow
                               key={
-                                course.COURSE_GRADE_ID || `${course.COURSE_NAME}-${course.GRADE}`
+                                course.COURSE_GRADE_ID ||
+                                `${course.COURSE_NAME}-${course.GRADE}`
                               }
                             >
                               <CustomSpace direction="vertical" size={0}>
                                 <CustomText strong>{course.COURSE_NAME}</CustomText>
                                 <CustomText type="secondary">
-                                  {course.CREDITS} créditos · Nota {course.GRADE}
+                                  {course.CREDITS} creditos - Nota {course.GRADE}
                                 </CustomText>
                               </CustomSpace>
                               <CustomTag
@@ -901,7 +926,7 @@ const Page: React.FC = () => {
                         <CustomAlert
                           type="info"
                           showIcon
-                          message="El período no tiene materias detalladas cargadas."
+                          message="El periodo no tiene materias detalladas cargadas."
                         />
                       )}
                     </CustomSpace>
@@ -910,7 +935,7 @@ const Page: React.FC = () => {
                       <CustomAlert
                         type="info"
                         showIcon
-                        message="No hay un período reciente para mostrar."
+                        message="No hay un periodo reciente para mostrar."
                       />
                     </EmptyPanel>
                   )}
@@ -920,29 +945,33 @@ const Page: React.FC = () => {
               <CustomCol xs={24} xl={10}>
                 <PanelCard>
                   <CustomTitle level={4}>Indicadores clave</CustomTitle>
-                  <CustomSpace direction="vertical" size={12} style={{ width: '100%' }}>
+                  <CustomSpace
+                    direction="vertical"
+                    size={12}
+                    style={{ width: '100%' }}
+                  >
                     <CustomAlert
                       type="success"
                       showIcon
                       icon={<CheckCircleOutlined />}
                       message={
                         bestTerm
-                          ? `Mejor período: ${bestTerm.PERIOD}`
-                          : 'Sin períodos evaluables'
+                          ? `Mejor periodo: ${bestTerm.PERIOD}`
+                          : 'Sin periodos evaluables'
                       }
                       description={
                         bestTerm
-                          ? `Índice ${Number(bestTerm.TERM_INDEX).toFixed(2)} con ${bestTerm.TOTAL_CREDITS} créditos.`
-                          : 'Cuando existan registros de calificaciones, se mostrará aquí el mejor desempeño.'
+                          ? `Indice ${Number(bestTerm.TERM_INDEX).toFixed(2)} con ${bestTerm.TOTAL_CREDITS} creditos.`
+                          : 'Cuando existan registros de calificaciones, se mostrara aqui el mejor desempeno.'
                       }
                     />
                     <CustomAlert
                       type="info"
                       showIcon
-                      message="Último seguimiento"
+                      message="Ultimo seguimiento"
                       description={
                         lastFollowUp
-                          ? `${formatDate(lastFollowUp.FOLLOW_UP_DATE)} · ${lastFollowUp.SUMMARY}`
+                          ? `${formatDate(lastFollowUp.FOLLOW_UP_DATE)} - ${lastFollowUp.SUMMARY}`
                           : 'No hay seguimiento registrado.'
                       }
                     />

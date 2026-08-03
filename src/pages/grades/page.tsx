@@ -4,6 +4,8 @@ import SmartTable from 'src/components/SmartTable'
 import CustomCard from 'src/components/custom/CustomCard'
 import CustomButton from 'src/components/custom/CustomButton'
 import CustomDivider from 'src/components/custom/CustomDivider'
+import CustomFormItem from 'src/components/custom/CustomFormItem'
+import CustomInput from 'src/components/custom/CustomInput'
 import CustomRow from 'src/components/custom/CustomRow'
 import CustomCol from 'src/components/custom/CustomCol'
 import { CustomText, CustomTitle } from 'src/components/custom/CustomParagraph'
@@ -30,8 +32,20 @@ import { ROLE_STUDENT_ID } from 'src/utils/role-path'
 import { useGetStudentPaginationMutation } from 'src/services/students/useGetStudentPaginationMutation'
 import { useStudentStore } from 'src/store/students.store'
 import { AdvancedCondition } from 'src/types/general'
+import { getConditionFromForm } from 'src/utils/get-condition-from'
 import TermForm, { FormValues } from './components/TermForm'
 import { Form } from 'antd'
+import CustomSelect from 'src/components/custom/CustomSelect'
+
+const initialFilter = {
+  FILTER: {
+    STATE__IN: ['A'],
+  },
+}
+
+const toNumber = (value: unknown): number => Number(value ?? 0)
+
+const formatDecimal = (value: unknown): string => toNumber(value).toFixed(2)
 
 const GradesPage: React.FC = () => {
   const [form] = Form.useForm()
@@ -61,10 +75,11 @@ const GradesPage: React.FC = () => {
 
   const loading =
     isPending || isCreatePending || isUpdatePending || isGetStudentsPending
+
   const studentOptions = useMemo(() => {
     const base = students.map((s) => ({
       value: s.STUDENT_ID,
-      label: `${s.NAME} ${s.LAST_NAME} · ${s.UNIVERSITY}`,
+      label: `${s.NAME} ${s.LAST_NAME} - ${s.UNIVERSITY}`,
     }))
 
     if (
@@ -82,7 +97,9 @@ const GradesPage: React.FC = () => {
 
   const handleSearch = useCallback(
     (page = metadata?.currentPage, size = metadata?.pageSize) => {
-      const condition = []
+      const { FILTER = initialFilter.FILTER } = form.getFieldsValue()
+      const condition: AdvancedCondition[] = getConditionFromForm(FILTER)
+
       if (debounce) {
         condition.push({
           field: 'FILTER',
@@ -90,18 +107,21 @@ const GradesPage: React.FC = () => {
           value: debounce,
         })
       }
+
       getTerms({ page, size, condition })
     },
-    [debounce, getTerms, metadata?.currentPage, metadata?.pageSize]
+    [debounce, form, getTerms, metadata?.currentPage, metadata?.pageSize]
   )
 
   useEffect(handleSearch, [handleSearch])
 
   const fetchStudents = useCallback(() => {
     if (!modalOpen || isStudentRole) return
+
     const condition: AdvancedCondition[] = [
       { field: 'STATE', operator: '=', value: 'A' },
     ]
+
     if (debounceStudent) {
       condition.push({
         field: 'FILTER',
@@ -109,6 +129,7 @@ const GradesPage: React.FC = () => {
         value: debounceStudent,
       })
     }
+
     getStudents({ page: 1, size: 20, condition })
   }, [debounceStudent, getStudents, isStudentRole, modalOpen])
 
@@ -126,7 +147,7 @@ const GradesPage: React.FC = () => {
       {
         dataIndex: 'PERIOD',
         key: 'PERIOD',
-        title: 'Período',
+        title: 'Periodo',
         render: (value: string, record) => (
           <CustomSpace direction="vertical" size={0}>
             <CustomText strong>{value}</CustomText>
@@ -139,27 +160,33 @@ const GradesPage: React.FC = () => {
       {
         dataIndex: 'TERM_INDEX',
         key: 'TERM_INDEX',
-        title: 'Índice',
+        title: 'Indice',
         render: (value) => (
           <CustomTag
-            color={value >= 80 ? 'green' : value >= 70 ? 'gold' : 'red'}
+            color={
+              toNumber(value) >= 80
+                ? 'green'
+                : toNumber(value) >= 70
+                  ? 'gold'
+                  : 'red'
+            }
           >
-            {value?.toFixed?.(2) ?? value}
+            {formatDecimal(value)}
           </CustomTag>
         ),
       },
       {
         dataIndex: 'TOTAL_CREDITS',
         key: 'TOTAL_CREDITS',
-        title: 'Créditos',
+        title: 'Creditos',
       },
       {
         dataIndex: 'UNIVERSITY',
         key: 'UNIVERSITY',
-        title: 'Institución',
+        title: 'Universidad',
         render: (_, record) => (
           <CustomSpace direction="vertical" size={0}>
-            <span>{record.UNIVERSITY ?? '—'}</span>
+            <span>{record.UNIVERSITY ?? '-'}</span>
             <CustomText type="secondary">{record.CAREER ?? ''}</CustomText>
           </CustomSpace>
         ),
@@ -220,6 +247,44 @@ const GradesPage: React.FC = () => {
 
   const detailCourses = detail?.COURSES ?? []
 
+  const filter = (
+    <CustomRow gutter={[8, 8]}>
+      <CustomCol xs={24}>
+        <CustomFormItem
+          label={'Estado'}
+          labelCol={{ span: 24 }}
+          name={['FILTER', 'STATE__IN']}
+        >
+          <CustomSelect
+            mode={'multiple'}
+            options={[
+              { label: 'Activos', value: 'A' },
+              { label: 'Inactivos', value: 'I' },
+            ]}
+          />
+        </CustomFormItem>
+      </CustomCol>
+      <CustomCol xs={24}>
+        <CustomFormItem
+          label={'Universidad'}
+          name={['FILTER', 'UNIVERSITY__LIKE']}
+          labelCol={{ span: 24 }}
+        >
+          <CustomInput placeholder="Filtrar por universidad" />
+        </CustomFormItem>
+      </CustomCol>
+      <CustomCol xs={24}>
+        <CustomFormItem
+          label={'Periodo'}
+          name={['FILTER', 'PERIOD__LIKE']}
+          labelCol={{ span: 24 }}
+        >
+          <CustomInput placeholder="Filtrar por periodo" />
+        </CustomFormItem>
+      </CustomCol>
+    </CustomRow>
+  )
+
   return (
     <CustomSpin spinning={loading}>
       <CustomCard>
@@ -227,11 +292,11 @@ const GradesPage: React.FC = () => {
           <CustomCol>
             <CustomTitle level={4}>Calificaciones por cuatrimestre</CustomTitle>
             <CustomText type="secondary">
-              Sube capturas, materias y cálculo automático del índice.
+              Sube capturas, materias y calculo automático del indice.
             </CustomText>
           </CustomCol>
           <CustomCol>
-            <ConditionalComponent condition={!isStudentRole}>
+            <ConditionalComponent condition={isStudentRole}>
               <CustomButton
                 type="primary"
                 icon={<PlusOutlined />}
@@ -249,12 +314,15 @@ const GradesPage: React.FC = () => {
         <CustomDivider />
 
         <SmartTable
-      exportable
+          exportable
+          form={form}
           rowKey="TERM_ID"
           dataSource={terms}
           columns={columns}
+          filter={filter}
+          initialFilter={initialFilter}
           metadata={metadata}
-          searchPlaceholder="Buscar por estudiante, cédula o período..."
+          searchPlaceholder="Buscar por estudiante, cedula o periodo..."
           onSearch={setSearchKey}
           onChange={handleSearch}
           showActions={false}
@@ -298,14 +366,14 @@ const GradesPage: React.FC = () => {
               style={{ width: '100%' }}
             >
               <CustomText strong>
-                {detail.PERIOD} · {detail.UNIVERSITY} {detail.CAREER}
+                {detail.PERIOD} - {detail.UNIVERSITY} {detail.CAREER}
               </CustomText>
               <CustomSpace size={12}>
                 <CustomTag color="geekblue">
-                  Índice {detail.TERM_INDEX.toFixed(2)}
+                  Indice {formatDecimal(detail.TERM_INDEX)}
                 </CustomTag>
                 <CustomTag color="purple">
-                  Créditos {detail.TOTAL_CREDITS}
+                  Creditos {toNumber(detail.TOTAL_CREDITS)}
                 </CustomTag>
               </CustomSpace>
               {detail.CAPTURE_BASE64 ? (
@@ -337,7 +405,7 @@ const GradesPage: React.FC = () => {
                           <CustomText strong>{course.COURSE_NAME}</CustomText>
                           <br />
                           <CustomText type="secondary">
-                            {course.CREDITS} créditos
+                            {toNumber(course.CREDITS)} creditos
                           </CustomText>
                         </CustomCol>
                         <CustomCol>
@@ -349,7 +417,7 @@ const GradesPage: React.FC = () => {
                                   ? 'red'
                                   : 'gold'
                             }
-                            text={`Nota ${course.GRADE}`}
+                            text={`Nota ${toNumber(course.GRADE)}`}
                           />
                         </CustomCol>
                       </CustomRow>
@@ -397,7 +465,7 @@ const CoursesPreview: React.FC<{ termId: number }> = ({ termId }) => {
         >
           <CustomTag color="blue">{course.COURSE_NAME}</CustomTag>
           <CustomText>
-            {course.CREDITS} cr · {course.GRADE}
+            {toNumber(course.CREDITS)} cr - {toNumber(course.GRADE)}
           </CustomText>
         </CustomSpace>
       ))}

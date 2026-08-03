@@ -27,6 +27,7 @@ import { CustomText } from 'src/components/custom/CustomParagraph'
 import { getCurrentRoleBasePath, ROLE_STUDENT_ID } from 'src/utils/role-path'
 import { getSessionInfo } from 'src/lib/session'
 import { addRecentMenuOption } from 'src/utils/recent-menu'
+import { PATH_MAIN_LOGO } from 'src/constants/routes'
 
 const Shell = styled(CustomLayout)`
   height: 100vh !important;
@@ -287,7 +288,7 @@ const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
               >
                 <LogoWrapper $collapsed={!isStudentRole && collapsed}>
                   <LogoContainer $collapsed={!isStudentRole && collapsed}>
-                    <img src={'/assets/logo.png'} />
+                    <img src={PATH_MAIN_LOGO} />
                   </LogoContainer>
                   <CustomDivider />
                 </LogoWrapper>

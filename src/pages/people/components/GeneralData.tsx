@@ -8,12 +8,12 @@ import CustomFormItem from 'src/components/custom/CustomFormItem'
 import CustomInput from 'src/components/custom/CustomInput'
 import CustomInputNumber from 'src/components/custom/CustomInputNumber'
 import CustomMaskedInput from 'src/components/custom/CustomMaskedInput'
-import { CustomParagraph } from 'src/components/custom/CustomParagraph'
+import CustomPasswordInput from 'src/components/custom/CustomPasswordInput'
 import CustomRadioGroup from 'src/components/custom/CustomRadioGroup'
 import CustomRow from 'src/components/custom/CustomRow'
 import CustomSelect from 'src/components/custom/CustomSelect'
 import CustomSpaceCompact from 'src/components/custom/CustomSpaceCompact'
-import { defaultBreakpoints, labelColFullWidth } from 'src/config/breakpoints'
+import { defaultBreakpoints } from 'src/config/breakpoints'
 import useDebounce from 'src/hooks/use-debounce'
 import { useGetCatalog } from 'src/hooks/use-get-catalog'
 import { CatalogItem } from 'src/services/catalog/catalog.types'
@@ -241,18 +241,46 @@ const GeneralData: React.FC<GeneralDataProps> = ({ form }) => {
           />
         </CustomFormItem>
       </CustomCol>
-      <CustomCol xs={24}>
+      <CustomCol {...defaultBreakpoints}>
         <CustomFormItem
-          shouldUpdate
-          label={' '}
-          colon={false}
-          {...labelColFullWidth}
+          label={isEditing ? 'Nueva contraseña' : 'Contraseña'}
+          name={'PASSWORD'}
+          rules={[
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                const username = getFieldValue('USERNAME')
+
+                if (!username || roleId === 2) {
+                  return Promise.resolve()
+                }
+
+                if (isEditing && !value) {
+                  return Promise.resolve()
+                }
+
+                if (value && value.length >= 6) {
+                  return Promise.resolve()
+                }
+
+                return Promise.reject(
+                  new Error(
+                    isEditing
+                      ? 'Si desea cambiar la contraseña, debe tener al menos 6 caracteres.'
+                      : 'La contraseña debe tener al menos 6 caracteres.'
+                  )
+                )
+              },
+            }),
+          ]}
         >
-          {() => (
-            <CustomParagraph>
-              <pre>{JSON.stringify(form.getFieldsValue(), null, 2)}</pre>
-            </CustomParagraph>
-          )}
+          <CustomPasswordInput
+            disabled={roleId === 2}
+            placeholder={
+              isEditing
+                ? 'Dejar vacío para conservar la actual'
+                : 'Definir contraseña'
+            }
+          />
         </CustomFormItem>
       </CustomCol>
     </CustomRow>

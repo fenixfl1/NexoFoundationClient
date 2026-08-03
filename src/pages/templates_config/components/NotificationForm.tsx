@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 import { Form } from 'antd'
 import dayjs from 'dayjs'
+import CustomAlert from 'src/components/custom/CustomAlert'
 import CustomModal from 'src/components/custom/CustomModal'
 import CustomForm from 'src/components/custom/CustomForm'
 import CustomFormItem from 'src/components/custom/CustomFormItem'
@@ -54,6 +55,11 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
   const [errorHandler] = useErrorHandler()
   const notify = useAppNotification()
   const { templates } = useNotificationTemplateStore()
+  const compactBreakpoints = {
+    xs: 24,
+    md: 8,
+    xl: 6,
+  }
 
   const { mutateAsync: createNotification, isPending: isCreatePending } =
     useCreateNotificationMutation()
@@ -80,7 +86,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
       form.resetFields()
       form.setFieldsValue({ STATUS: 'P', STATE: 'A' })
     }
-  }, [notification, open])
+  }, [form, notification, open])
 
   const selectedTemplateId = Form.useWatch('TEMPLATE_ID', form)
 
@@ -98,7 +104,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
         BODY: template.BODY,
       })
     }
-  }, [selectedTemplateId, templates])
+  }, [form, selectedTemplateId, templates])
 
   const parseJsonField = (value?: string | null) => {
     if (!value) return null
@@ -123,13 +129,13 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
           NOTIFICATION_ID: notification.NOTIFICATION_ID,
         })
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Notificación actualizada correctamente.',
         })
       } else {
         await createNotification(payload)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Notificación registrada correctamente.',
         })
       }
@@ -148,7 +154,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
       JSON.parse(value)
       return Promise.resolve()
     } catch (_error) {
-      return Promise.reject('JSON inválido')
+      return Promise.reject(new Error('JSON invalido'))
     }
   }
 
@@ -161,11 +167,24 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
       title={notification ? 'Editar notificación' : 'Registrar notificación'}
     >
       <CustomSpin spinning={isCreatePending || isUpdatePending}>
+        <CustomAlert
+          type="info"
+          showIcon
+          message={
+            'Puedes crear una notificación desde cero o apoyarte en una plantilla. Si eliges una plantilla, se completan automáticamente el canal, el asunto y el contenido. El payload permite enviar datos dinamicos para reemplazar variables dentro del mensaje.'
+          }
+          style={{ marginBottom: 16 }}
+        />
+
         <CustomDivider />
         <CustomForm form={form} {...formItemLayout}>
           <CustomRow gutter={[16, 8]}>
             <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Plantilla'} name={'TEMPLATE_ID'}>
+              <CustomFormItem
+                label={'Plantilla'}
+                name={'TEMPLATE_ID'}
+                tooltip="Úsala cuando quieras reutilizar una estructura ya preparada."
+              >
                 <CustomSelect
                   allowClear
                   placeholder={'Seleccionar plantilla'}
@@ -180,6 +199,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
               <CustomFormItem
                 label={'Canal'}
                 name={'CHANNEL'}
+                tooltip="Medio por el cual se enviara la notificación."
                 dependencies={['TEMPLATE_ID']}
                 rules={[
                   {
@@ -188,7 +208,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
                         return Promise.resolve()
                       }
                       return Promise.reject(
-                        'Seleccione un canal o una plantilla.'
+                        new Error('Seleccione un canal o una plantilla.')
                       )
                     },
                   },
@@ -204,6 +224,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
               <CustomFormItem
                 label={'Destinatario'}
                 name={'RECIPIENT'}
+                tooltip="Correo o destino al que se enviara el mensaje."
                 rules={[{ required: true }]}
                 {...labelColFullWidth}
               >
@@ -214,6 +235,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
               <CustomFormItem
                 label={'Asunto'}
                 name={'SUBJECT'}
+                tooltip="Titulo del correo o encabezado principal del mensaje."
                 {...labelColFullWidth}
               >
                 <CustomInput placeholder={'Asunto del mensaje'} />
@@ -224,6 +246,8 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
                 {...labelColFullWidth}
                 label={'Contenido'}
                 name={'BODY'}
+                tooltip="Texto o HTML que se enviara al destinatario."
+                extra="Si usas plantilla, aquí veras y podrás ajustar el contenido generado."
                 dependencies={['TEMPLATE_ID']}
                 rules={[
                   {
@@ -232,7 +256,9 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
                         return Promise.resolve()
                       }
                       return Promise.reject(
-                        'Proporcione el contenido o seleccione una plantilla.'
+                        new Error(
+                          'Proporcione el contenido o seleccione una plantilla.'
+                        )
                       )
                     },
                   },
@@ -246,8 +272,10 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Carga útil (JSON)'}
+                label={'Payload (JSON)'}
                 name={'PAYLOAD'}
+                tooltip="Datos adicionales para completar variables dinámicas dentro del mensaje."
+                extra='Ejemplo: {"studentName":"Ana","amount":"1500"}'
                 rules={[{ validator: jsonValidator }]}
                 {...labelColFullWidth}
               >
@@ -261,27 +289,40 @@ const NotificationForm: React.FC<NotificationFormProps> = ({
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
-                label={'Entidad relacionada'}
+                label={'Entidad Relacionada'}
                 name={'RELATED_ENTITY'}
+                tooltip="Modulo o tabla con la que quieres vincular esta notificación."
+                labelCol={{ xs: 14 }}
               >
-                <CustomInput placeholder={'Tabla o módulo relacionado'} />
+                <CustomInput placeholder={'Tabla o modulo relacionado'} />
               </CustomFormItem>
             </CustomCol>
-            <CustomCol {...defaultBreakpoints}>
+            <CustomCol {...compactBreakpoints}>
               <CustomFormItem
                 label={'Identificador relacionado'}
                 name={'RELATED_ID'}
+                tooltip="Id del registro asociado, si aplica."
+                labelCol={{ span: 24 }}
               >
                 <CustomInput placeholder={'ID de referencia'} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Programar envío'} name={'SCHEDULED_AT'}>
+              <CustomFormItem
+                label={'Programar envío'}
+                name={'SCHEDULED_AT'}
+                tooltip="Si lo dejas vacío, el sistema podrá procesarla apenas corresponda."
+                labelCol={{ span: 12 }}
+              >
                 <CustomDatePicker showTime />
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Estado'} name={'STATUS'}>
+              <CustomFormItem
+                label={'Estado'}
+                name={'STATUS'}
+                tooltip="Controla si queda pendiente, programada, enviada o fallida."
+              >
                 <CustomSelect
                   options={notificationStatusOptions}
                   placeholder={'Seleccionar estado'}

@@ -97,6 +97,7 @@ const StudentsPage: React.FC = () => {
 
     return Object.values(summaryMap)
   }, [status, summary])
+
   const columns: ColumnsType<Student> = [
     {
       dataIndex: 'NAME',
@@ -116,7 +117,7 @@ const StudentsPage: React.FC = () => {
     {
       dataIndex: 'UNIVERSITY',
       key: 'UNIVERSITY',
-      title: 'Institución',
+      title: 'Universidad',
       render: (_, record) => (
         <CustomSpace direction="vertical" size={0}>
           <span>{record.UNIVERSITY}</span>
@@ -127,7 +128,7 @@ const StudentsPage: React.FC = () => {
     {
       dataIndex: 'ACADEMIC_AVERAGE',
       key: 'ACADEMIC_AVERAGE',
-      title: 'Índice',
+      title: 'Indice',
       align: 'center',
     },
     {
@@ -165,13 +166,6 @@ const StudentsPage: React.FC = () => {
               onClick={() => openDrawer(record)}
             />
           </CustomTooltip>
-          {/* <CustomTooltip title={'Seguimiento'}>
-            <CustomButton
-              type="link"
-              icon={<CalendarOutlined />}
-              onClick={() => openDrawer(record)}
-            />
-          </CustomTooltip> */}
         </CustomSpace>
       ),
     },
@@ -186,7 +180,7 @@ const StudentsPage: React.FC = () => {
       header: 'Doc. Identidad',
       render: (value: string) => formatter({ value, format: 'document' }),
     },
-    UNIVERSITY: 'Institución',
+    UNIVERSITY: 'Universidad',
     CAREER: {
       header: 'Carrera',
       render: (value: string) => {
@@ -198,7 +192,7 @@ const StudentsPage: React.FC = () => {
         return 'Por definir'
       },
     },
-    ACADEMIC_AVERAGE: 'índice',
+    ACADEMIC_AVERAGE: 'Indice',
     HOURS_COMPLETED: {
       header: 'Horas de Servicio',
       render: (_, record) =>

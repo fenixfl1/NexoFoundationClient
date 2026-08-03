@@ -85,6 +85,7 @@ export interface ExportFormValue {
   format?: 'pdf' | 'xlsx' | 'csv'
   orientation?: 'landscape' | 'portrait'
   title?: string
+  reportType?: string
   filename?: string
   showHead?: boolean
   extraHeaderHtml?: string
@@ -160,8 +161,6 @@ const ExportOptions: React.FC<ExportOptionsProps> = ({
 
       onCancel?.()
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.log({ error })
       errorHandler(error)
     }
   }

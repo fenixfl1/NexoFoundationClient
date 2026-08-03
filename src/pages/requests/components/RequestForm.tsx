@@ -1,7 +1,9 @@
 import { Form } from 'antd'
 import { Dayjs } from 'dayjs'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import dayjs from 'dayjs'
 import CatalogSelector from 'src/components/CatalogSelector'
+import ConditionalComponent from 'src/components/ConditionalComponent'
 import CustomCol from 'src/components/custom/CustomCol'
 import CustomDatePicker from 'src/components/custom/CustomDatePicker'
 import CustomDivider from 'src/components/custom/CustomDivider'
@@ -9,33 +11,32 @@ import CustomForm from 'src/components/custom/CustomForm'
 import CustomFormItem from 'src/components/custom/CustomFormItem'
 import CustomInput from 'src/components/custom/CustomInput'
 import CustomModal from 'src/components/custom/CustomModal'
+import CustomPersonSelector from 'src/components/custom/CustomPersonSelector'
+import { CustomTitle } from 'src/components/custom/CustomParagraph'
+import CustomRow from 'src/components/custom/CustomRow'
 import CustomSelect from 'src/components/custom/CustomSelect'
 import CustomSpin from 'src/components/custom/CustomSpin'
 import CustomTextArea from 'src/components/custom/CustomTextArea'
-import CustomRow from 'src/components/custom/CustomRow'
-import { CustomTitle } from 'src/components/custom/CustomParagraph'
 import {
   defaultBreakpoints,
   formItemLayout,
   labelColFullWidth,
 } from 'src/config/breakpoints'
-import useDebounce from 'src/hooks/use-debounce'
-import { AdvancedCondition } from 'src/types/general'
-import { useGetStudentPaginationMutation } from 'src/services/students/useGetStudentPaginationMutation'
-import { useStudentStore } from 'src/store/students.store'
-import { useCreateRequestMutation } from 'src/services/requests/useCreateRequestMutation'
-import { useUpdateRequestMutation } from 'src/services/requests/useUpdateRequestMutation'
 import { useAppNotification } from 'src/context/NotificationContext'
+import { useErrorHandler } from 'src/hooks/use-error-handler'
+import useDebounce from 'src/hooks/use-debounce'
+import { getSessionInfo } from 'src/lib/session'
 import {
   CreateRequestPayload,
-  RequestStatus,
   RequestItem,
+  RequestStatus,
 } from 'src/services/requests/request.types'
-import { useErrorHandler } from 'src/hooks/use-error-handler'
-import dayjs from 'dayjs'
-import ConditionalComponent from 'src/components/ConditionalComponent'
-import { getSessionInfo } from 'src/lib/session'
-import CustomPersonSelector from 'src/components/custom/CustomPersonSelector'
+import { useCreateRequestMutation } from 'src/services/requests/useCreateRequestMutation'
+import { useUpdateRequestMutation } from 'src/services/requests/useUpdateRequestMutation'
+import { useGetStudentPaginationMutation } from 'src/services/students/useGetStudentPaginationMutation'
+import { useStudentStore } from 'src/store/students.store'
+import { AdvancedCondition } from 'src/types/general'
+import { ROLE_STUDENT_ID } from 'src/utils/role-path'
 
 interface RequestFormProps {
   onCancel?: () => void
@@ -46,7 +47,7 @@ interface RequestFormProps {
 
 const requestStatusLabels: Record<RequestStatus, string> = {
   P: 'Pendiente',
-  R: 'En revisión',
+  R: 'En revision',
   A: 'Aprobada',
   D: 'Rechazada',
   C: 'Cita programada',
@@ -64,9 +65,11 @@ const RequestForm: React.FC<RequestFormProps> = ({
 }) => {
   const [form] = Form.useForm<RequestFormValues>()
   const isEditing = Boolean(request?.REQUEST_ID)
-
   const notification = useAppNotification()
   const [errorHandler] = useErrorHandler()
+  const session = getSessionInfo()
+  const sessionPersonId = Number(session.personId)
+  const isStudent = String(session.roleId) === ROLE_STUDENT_ID
 
   const [studentSearch, setStudentSearch] = useState('')
   const debounceStudent = useDebounce(studentSearch)
@@ -78,8 +81,7 @@ const RequestForm: React.FC<RequestFormProps> = ({
     useCreateRequestMutation()
   const { mutateAsync: updateRequest, isPending: isUpdateRequestPending } =
     useUpdateRequestMutation()
-
-  const isStudent = Number(getSessionInfo().roleId) === 3
+  const currentStudentId = Form.useWatch('STUDENT_ID', form)
 
   const statusOptions = useMemo(
     () =>
@@ -113,22 +115,25 @@ const RequestForm: React.FC<RequestFormProps> = ({
 
     if (isStudent) {
       condition.push({
-        value: getSessionInfo().personId,
+        value: sessionPersonId,
         field: 'PERSON_ID',
         operator: '=',
       })
     }
 
     getStudents({ page: 1, size: 20, condition })
-  }, [debounceStudent, getStudents])
+  }, [debounceStudent, getStudents, isStudent, sessionPersonId])
 
   const handleStudentSelect = (studentId?: number) => {
     const student = students.find(
       (item) => item.STUDENT_ID === Number(studentId)
     )
 
-    if (student?.PERSON_ID) {
-      form.setFieldsValue({ PERSON_ID: student.PERSON_ID })
+    if (student) {
+      form.setFieldsValue({
+        PERSON_ID: student.PERSON_ID,
+        COHORT: student.COHORT ?? undefined,
+      })
     }
   }
 
@@ -139,8 +144,10 @@ const RequestForm: React.FC<RequestFormProps> = ({
     }
 
     const student = students.find((item) => item.PERSON_ID === Number(personId))
-
-    form.setFieldsValue({ STUDENT_ID: student?.STUDENT_ID })
+    form.setFieldsValue({
+      STUDENT_ID: student?.STUDENT_ID,
+      COHORT: student?.COHORT ?? undefined,
+    })
   }
 
   const handleSubmit = async () => {
@@ -159,21 +166,29 @@ const RequestForm: React.FC<RequestFormProps> = ({
         await updateRequest({ ...payload, REQUEST_ID: request.REQUEST_ID })
         notification({
           message: 'Solicitud actualizada',
-          description: 'La solicitud se actualizó correctamente.',
+          description: 'La solicitud se actualizo correctamente.',
         })
       } else {
         const payload: CreateRequestPayload = {
           ...values,
+          PERSON_ID: isStudent ? sessionPersonId : values.PERSON_ID,
           STUDENT_ID: values.STUDENT_ID ?? null,
-          NEXT_APPOINTMENT: values.NEXT_APPOINTMENT
-            ? values.NEXT_APPOINTMENT.toISOString()
-            : null,
+          STATUS: isStudent ? 'P' : values.STATUS,
+          ASSIGNED_COORDINATOR: isStudent
+            ? null
+            : (values.ASSIGNED_COORDINATOR ?? null),
+          NEXT_APPOINTMENT:
+            isStudent || !values.NEXT_APPOINTMENT
+              ? null
+              : values.NEXT_APPOINTMENT.toISOString(),
+          COHORT: values.COHORT ?? null,
+          NOTES: values.NOTES ?? null,
         }
 
         await createRequest(payload)
         notification({
           message: 'Solicitud registrada',
-          description: 'La solicitud se registró correctamente.',
+          description: 'La solicitud se registro correctamente.',
         })
       }
 
@@ -201,13 +216,41 @@ const RequestForm: React.FC<RequestFormProps> = ({
 
   useEffect(() => {
     if (!open || !request) return
+
     form.setFieldsValue({
       ...request,
       NEXT_APPOINTMENT: request.NEXT_APPOINTMENT
         ? dayjs(request.NEXT_APPOINTMENT)
         : null,
     })
-  }, [open, request])
+  }, [form, open, request])
+
+  useEffect(() => {
+    if (!open || isEditing || !isStudent) return
+    form.setFieldsValue({
+      PERSON_ID: sessionPersonId,
+      STATUS: 'P',
+      NEXT_APPOINTMENT: null,
+    })
+  }, [form, isEditing, isStudent, open, sessionPersonId])
+
+  useEffect(() => {
+    if (!open || isEditing || !isStudent) return
+
+    const currentStudentId = form.getFieldValue('STUDENT_ID')
+    if (currentStudentId) return
+
+    const student = students.find(
+      (item) => item.PERSON_ID === sessionPersonId
+    )
+
+    if (student?.STUDENT_ID) {
+      form.setFieldsValue({
+        STUDENT_ID: student.STUDENT_ID,
+        COHORT: student.COHORT ?? undefined,
+      })
+    }
+  }, [form, isEditing, isStudent, open, sessionPersonId, students])
 
   const studentOptions = useMemo(
     () =>
@@ -217,6 +260,14 @@ const RequestForm: React.FC<RequestFormProps> = ({
       })),
     [students]
   )
+  const selectedStudent = useMemo(
+    () =>
+      students.find((student) => student.STUDENT_ID === Number(currentStudentId)),
+    [currentStudentId, students]
+  )
+
+  const showStudentOnlyRestrictedFields = !isStudent || isEditing
+  const showAdminCreateFields = !isEditing && !isStudent
 
   return (
     <CustomModal
@@ -238,10 +289,10 @@ const RequestForm: React.FC<RequestFormProps> = ({
         <CustomForm
           form={form}
           {...formItemLayout}
-          initialValues={{ STATUS: 'P' }}
+          initialValues={{ STATUS: 'P', COHORT: selectedStudent?.COHORT }}
         >
           <CustomRow justify={'start'}>
-            <ConditionalComponent condition={!isEditing}>
+            <ConditionalComponent condition={showAdminCreateFields}>
               <CustomCol {...defaultBreakpoints}>
                 <CustomFormItem
                   label={'Solicitante'}
@@ -249,14 +300,16 @@ const RequestForm: React.FC<RequestFormProps> = ({
                   rules={[{ required: true }]}
                 >
                   <CustomPersonSelector
-                    disabled={isStudent}
                     placeholder={'Seleccionar persona'}
                     onChange={handlePersonSelect}
                   />
                 </CustomFormItem>
               </CustomCol>
             </ConditionalComponent>
-            <ConditionalComponent condition={false}>
+
+            <CustomFormItem hidden name={'PERSON_ID'} />
+
+            <ConditionalComponent condition={showAdminCreateFields}>
               <CustomCol {...defaultBreakpoints}>
                 <CustomFormItem
                   label={'Becario (opcional)'}
@@ -274,6 +327,9 @@ const RequestForm: React.FC<RequestFormProps> = ({
               </CustomCol>
             </ConditionalComponent>
 
+            <CustomFormItem hidden name={'STUDENT_ID'} />
+            <CustomFormItem hidden name={'COHORT'} />
+
             <ConditionalComponent condition={!isEditing}>
               <CustomCol {...defaultBreakpoints}>
                 <CustomFormItem
@@ -289,13 +345,15 @@ const RequestForm: React.FC<RequestFormProps> = ({
               </CustomCol>
             </ConditionalComponent>
 
-            <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Estado'} name={'STATUS'}>
-                <CustomSelect options={statusOptions} />
-              </CustomFormItem>
-            </CustomCol>
+            <ConditionalComponent condition={!isStudent || isEditing}>
+              <CustomCol {...defaultBreakpoints}>
+                <CustomFormItem label={'Estado'} name={'STATUS'}>
+                  <CustomSelect options={statusOptions} />
+                </CustomFormItem>
+              </CustomCol>
+            </ConditionalComponent>
 
-            <ConditionalComponent condition={!isEditing}>
+            <ConditionalComponent condition={showAdminCreateFields}>
               <CustomCol {...defaultBreakpoints}>
                 <CustomFormItem
                   label={'Coordinador'}
@@ -306,13 +364,18 @@ const RequestForm: React.FC<RequestFormProps> = ({
               </CustomCol>
             </ConditionalComponent>
 
-            <CustomCol {...defaultBreakpoints}>
-              <CustomFormItem label={'Próxima cita'} name={'NEXT_APPOINTMENT'}>
-                <CustomDatePicker minDate={dayjs()} />
-              </CustomFormItem>
-            </CustomCol>
+            <ConditionalComponent condition={showStudentOnlyRestrictedFields}>
+              <CustomCol {...defaultBreakpoints}>
+                <CustomFormItem
+                  label={'Proxima cita'}
+                  name={'NEXT_APPOINTMENT'}
+                >
+                  <CustomDatePicker minDate={dayjs()} />
+                </CustomFormItem>
+              </CustomCol>
+            </ConditionalComponent>
 
-            <ConditionalComponent condition={!isEditing}>
+            <ConditionalComponent condition={showAdminCreateFields}>
               <CustomCol {...defaultBreakpoints}>
                 <CustomFormItem label={'Cohorte'} name={'COHORT'}>
                   <CatalogSelector
@@ -327,6 +390,11 @@ const RequestForm: React.FC<RequestFormProps> = ({
               <CustomFormItem
                 label={'Notas'}
                 name={'NOTES'}
+                rules={
+                  isStudent
+                    ? [{ required: true, message: 'Agrega una nota para la solicitud.' }]
+                    : undefined
+                }
                 {...labelColFullWidth}
               >
                 <CustomTextArea rows={4} placeholder={'Comentarios'} />

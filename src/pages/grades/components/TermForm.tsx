@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { Form, UploadFile } from 'antd'
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import CustomModal from 'src/components/custom/CustomModal'
 import CustomRow from 'src/components/custom/CustomRow'
 import CustomCol from 'src/components/custom/CustomCol'
@@ -9,13 +8,20 @@ import CustomInput from 'src/components/custom/CustomInput'
 import CustomTextarea from 'src/components/custom/CustomTextArea'
 import CustomInputNumber from 'src/components/custom/CustomInputNumber'
 import CustomDivider from 'src/components/custom/CustomDivider'
-import CustomSpace from 'src/components/custom/CustomSpace'
-import CustomButton from 'src/components/custom/CustomButton'
-import CustomUpload from 'src/components/custom/CustomUpload'
 import { Term, TermPayload } from 'src/services/grades/grades.types'
 import CustomFormItem from 'src/components/custom/CustomFormItem'
 import CustomForm from 'src/components/custom/CustomForm'
-import CustomFormList from 'src/components/custom/CustomFormList'
+import {
+  defaultBreakpoints,
+  formItemLayout,
+  labelColFullWidth,
+} from 'src/config/breakpoints'
+import ConditionalComponent from 'src/components/ConditionalComponent'
+import CustomCollapseFormList from 'src/components/custom/CustomCollapseFormList'
+import CustomDragger from 'src/components/custom/CustomDragger'
+import { useErrorHandler } from 'src/hooks/use-error-handler'
+import CatalogSelector from 'src/components/CatalogSelector'
+import { useGetMultiCatalogList } from 'src/hooks/use-get-multi-catalog-list'
 
 export type FormValues = TermPayload & { TERM_ID?: number }
 
@@ -46,8 +52,12 @@ const TermForm: React.FC<TermFormProps> = ({
   onSubmit,
   initialValues,
 }) => {
+  const [errorHandler] = useErrorHandler()
   const [form] = Form.useForm<FormValues>()
   const [fileList, setFileList] = useState<UploadFile[]>([])
+  const courses = Form.useWatch('COURSES', form)
+
+  useGetMultiCatalogList()
 
   useEffect(() => {
     if (open && initialValues) {
@@ -71,24 +81,28 @@ const TermForm: React.FC<TermFormProps> = ({
   }, [open, initialValues, form])
 
   const handleOk = async () => {
-    const values = await form.validateFields()
-    const payload: FormValues = { ...values }
+    try {
+      const values = await form.validateFields()
+      const payload: FormValues = { ...values }
 
-    if (fileList[0]?.originFileObj) {
-      const file = fileList[0].originFileObj as File
-      const base64 = await fileToBase64(file)
-      payload.CAPTURE_BASE64 = base64
-      payload.CAPTURE_FILE_NAME = file.name
-      payload.CAPTURE_MIME_TYPE = file.type
+      if (fileList[0]?.originFileObj) {
+        const file = fileList[0].originFileObj as File
+        const base64 = await fileToBase64(file)
+        payload.CAPTURE_BASE64 = base64
+        payload.CAPTURE_FILE_NAME = file.name
+        payload.CAPTURE_MIME_TYPE = file.type
+      }
+
+      if (isStudentRole) {
+        delete payload.STUDENT_ID
+      }
+
+      await onSubmit(payload)
+      setFileList([])
+      onClose()
+    } catch (error) {
+      errorHandler(error)
     }
-
-    if (isStudentRole) {
-      delete payload.STUDENT_ID
-    }
-
-    await onSubmit(payload)
-    setFileList([])
-    onClose()
   }
 
   return (
@@ -105,141 +119,143 @@ const TermForm: React.FC<TermFormProps> = ({
     >
       <CustomForm
         form={form}
-        layout="vertical"
         initialValues={{ COURSES: [{}] }}
+        {...formItemLayout}
       >
-        <CustomRow gutter={[12, 12]}>
-          <CustomCol span={8}>
+        <CustomRow justify={'start'}>
+          <ConditionalComponent condition={!isStudentRole}>
+            <CustomCol {...defaultBreakpoints}>
+              <CustomFormItem
+                label="Becario"
+                name="STUDENT_ID"
+                hidden={isStudentRole}
+                rules={
+                  isStudentRole
+                    ? []
+                    : [{ required: true, message: 'Selecciona el becario' }]
+                }
+              >
+                <CustomSelect
+                  showSearch
+                  filterOption={false}
+                  options={studentOptions}
+                  placeholder="Buscar por nombre o cédula"
+                  onSearch={onStudentSearch}
+                  allowClear
+                />
+              </CustomFormItem>
+            </CustomCol>
+          </ConditionalComponent>
+          <CustomCol {...defaultBreakpoints}>
             <CustomFormItem
-              label="Becario"
-              name="STUDENT_ID"
-              rules={
-                isStudentRole
-                  ? []
-                  : [{ required: true, message: 'Selecciona el becario' }]
-              }
-              hidden={isStudentRole}
-            >
-              <CustomSelect
-                showSearch
-                filterOption={false}
-                options={studentOptions}
-                placeholder="Buscar por nombre o cédula"
-                onSearch={onStudentSearch}
-                allowClear
-              />
-            </CustomFormItem>
-          </CustomCol>
-          <CustomCol span={8}>
-            <CustomFormItem
-              label="Período (ej. 2026-1)"
+              label="Período"
               name="PERIOD"
               rules={[{ required: true, message: 'Indica el período' }]}
             >
-              <CustomInput placeholder="2026-1" />
+              <CatalogSelector
+                catalog={'ID_LIST_COHORTS'}
+                placeholder={'Seleccionar cohorte'}
+              />
             </CustomFormItem>
           </CustomCol>
-          <CustomCol span={8}>
+          <CustomCol {...defaultBreakpoints}>
             <CustomFormItem label="Observaciones" name="OBSERVATIONS">
               <CustomTextarea placeholder="Notas internas" rows={1} />
             </CustomFormItem>
           </CustomCol>
-        </CustomRow>
 
-        <CustomDivider>Materias</CustomDivider>
-        <CustomFormList name="COURSES">
-          {(fields, { add, remove }) => (
-            <CustomSpace
-              direction="vertical"
-              size={12}
-              style={{ width: '100%' }}
-            >
-              {fields.map((field) => (
-                <CustomRow key={field.key} align={'middle'}>
-                  <CustomCol span={8}>
-                    <CustomFormItem
-                      {...field}
-                      name={[field.name, 'COURSE_NAME']}
-                      rules={[{ required: true, message: 'Materia' }]}
-                    >
-                      <CustomInput placeholder="Nombre de la materia" />
-                    </CustomFormItem>
-                  </CustomCol>
-                  <CustomCol span={4}>
-                    <CustomFormItem
-                      {...field}
-                      name={[field.name, 'GRADE']}
-                      rules={[{ required: true, message: 'Nota' }]}
-                    >
-                      <CustomInputNumber
-                        min={0}
-                        max={100}
-                        style={{ width: '100%' }}
-                      />
-                    </CustomFormItem>
-                  </CustomCol>
-                  <CustomCol span={4}>
-                    <CustomFormItem
-                      {...field}
-                      name={[field.name, 'CREDITS']}
-                      rules={[{ required: true, message: 'Créditos' }]}
-                    >
-                      <CustomInputNumber
-                        min={0}
-                        max={20}
-                        style={{ width: '100%' }}
-                      />
-                    </CustomFormItem>
-                  </CustomCol>
-                  <CustomCol span={6}>
-                    <CustomFormItem
-                      {...field}
-                      name={[field.name, 'STATUS']}
-                      initialValue="in_progress"
-                    >
-                      <CustomSelect
-                        options={courseStatusOptions}
-                        placeholder="Estado"
-                      />
-                    </CustomFormItem>
-                  </CustomCol>
-
-                  <CustomFormItem>
-                    <CustomButton
-                      danger
-                      type="text"
-                      onClick={() => remove(field.name)}
-                      icon={<DeleteOutlined />}
-                    />
-                  </CustomFormItem>
-                </CustomRow>
-              ))}
-              <CustomButton
-                type="dashed"
-                icon={<PlusOutlined />}
-                onClick={() => add()}
+          <CustomCol xs={24}>
+            <CustomFormItem label={' '} colon={false} {...labelColFullWidth}>
+              <CustomDivider>Materias</CustomDivider>
+              <CustomCollapseFormList
+                name={'COURSES'}
+                form={form}
+                initialValue={[{}]}
+                addText={'Agregar materia'}
+                addButtonPosition={'bottom'}
+                itemLabel={(index) => courses?.[index]?.COURSE_NAME}
               >
-                Agregar materia
-              </CustomButton>
-            </CustomSpace>
-          )}
-        </CustomFormList>
+                {(field) => (
+                  <CustomRow key={field.key} align={'middle'}>
+                    <CustomCol {...defaultBreakpoints}>
+                      <CustomFormItem
+                        {...field}
+                        label={'Materia'}
+                        name={[field.name, 'COURSE_NAME']}
+                        rules={[{ required: true, message: 'Materia' }]}
+                        labelCol={{ span: 8 }}
+                      >
+                        <CustomInput placeholder="Nombre de la materia" />
+                      </CustomFormItem>
+                    </CustomCol>
+                    <CustomCol {...defaultBreakpoints}>
+                      <CustomFormItem
+                        {...field}
+                        name={[field.name, 'GRADE']}
+                        label={'Nota'}
+                        rules={[{ required: true, message: 'Nota' }]}
+                        labelCol={{ span: 8 }}
+                      >
+                        <CustomInputNumber
+                          placeholder={'0 - 100'}
+                          min={0}
+                          max={100}
+                          width={'100%'}
+                        />
+                      </CustomFormItem>
+                    </CustomCol>
+                    <CustomCol {...defaultBreakpoints}>
+                      <CustomFormItem
+                        {...field}
+                        name={[field.name, 'CREDITS']}
+                        label={'Créditos'}
+                        rules={[{ required: true, message: 'Créditos' }]}
+                        labelCol={{ span: 8 }}
+                      >
+                        <CustomInputNumber
+                          placeholder={'0 - 20'}
+                          min={0}
+                          max={20}
+                          width={'100%'}
+                        />
+                      </CustomFormItem>
+                    </CustomCol>
+                    <CustomCol {...defaultBreakpoints}>
+                      <CustomFormItem
+                        {...field}
+                        label={'Estado'}
+                        name={[field.name, 'STATUS']}
+                        initialValue="in_progress"
+                        labelCol={{ span: 8 }}
+                      >
+                        <CustomSelect
+                          options={courseStatusOptions}
+                          placeholder="Estado"
+                        />
+                      </CustomFormItem>
+                    </CustomCol>
+                  </CustomRow>
+                )}
+              </CustomCollapseFormList>
+            </CustomFormItem>
+          </CustomCol>
 
-        <CustomDivider>Captura de calificaciones</CustomDivider>
-        <CustomFormItem name="CAPTURE">
-          <CustomUpload
-            listType="text"
-            accept=".pdf,image/*"
-            fileList={fileList}
-            multiple={false}
-            onUpload={async () => true}
-            onChange={({ fileList: next }) => {
-              setFileList(next.slice(-1))
-            }}
-          >
-            Adjuntar archivo (PDF o imagen)
-          </CustomUpload>
-        </CustomFormItem>
+          <CustomCol xs={24}>
+            <CustomFormItem label={' '} colon={false} {...labelColFullWidth}>
+              <CustomDivider>Captura de calificaciones</CustomDivider>
+              <CustomFormItem noStyle rules={[{ required: true }]}>
+                <CustomDragger
+                  name="file"
+                  accept={'.pdf,image/*'}
+                  fileList={fileList}
+                  onChange={({ fileList: next }) => {
+                    setFileList(next.slice(-1))
+                  }}
+                />
+              </CustomFormItem>
+            </CustomFormItem>
+          </CustomCol>
+        </CustomRow>
       </CustomForm>
     </CustomModal>
   )

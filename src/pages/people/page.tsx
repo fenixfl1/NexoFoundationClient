@@ -12,9 +12,13 @@ import CustomTag from 'src/components/custom/CustomTag'
 import RoleSelector from 'src/components/RoleSelector'
 import SmartTable from 'src/components/SmartTable'
 import { defaultBreakpoints } from 'src/config/breakpoints'
+import { useCustomNotifications } from 'src/hooks/use-custom-notification'
+import { useCustomModal } from 'src/hooks/use-custom-modal'
 import useDebounce from 'src/hooks/use-debounce'
+import { useErrorHandler } from 'src/hooks/use-error-handler'
 import { Person } from 'src/services/people/people.types'
 import { useGetPaginatedPeopleMutation } from 'src/services/people/useGetPaginatedPeopleMutation'
+import { useUpdatePersonMutation } from 'src/services/people/useUpdatePersonMutation'
 import { usePeopleStore } from 'src/store/people.store'
 import { AdvancedCondition } from 'src/types/general'
 import formatter from 'src/utils/formatter'
@@ -32,6 +36,9 @@ const states = {
 }
 
 const Page: React.FC = () => {
+  const [errorHandler] = useErrorHandler()
+  const { confirmModal } = useCustomModal()
+  const { successNotification } = useCustomNotifications()
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [searchKey, setSearchKey] = useState('')
@@ -40,13 +47,13 @@ const Page: React.FC = () => {
 
   const { mutate: getPaginatedPeople, isPending: isGetPeoplePending } =
     useGetPaginatedPeopleMutation()
+  const { mutateAsync: updatePerson, isPending: isUpdatePending } =
+    useUpdatePersonMutation()
 
   const handleSearch = useCallback(
     (page = metadata.currentPage, size = metadata.pageSize) => {
       const { FILTER = initialFilter.FILTER } = form.getFieldsValue()
-
       const filter = getConditionFromForm(FILTER)
-
       const condition: AdvancedCondition[] = [...filter]
 
       if (debounce) {
@@ -59,7 +66,7 @@ const Page: React.FC = () => {
 
       getPaginatedPeople({ page, size, condition })
     },
-    [debounce]
+    [debounce, form, getPaginatedPeople, metadata.currentPage, metadata.pageSize]
   )
 
   useEffect(handleSearch, [handleSearch])
@@ -68,11 +75,37 @@ const Page: React.FC = () => {
     navigate(location.pathname + '/edit/' + record.PERSON_ID)
   }
 
+  const handleToggleState = (record: Person) => {
+    confirmModal({
+      title: 'Confirmacion',
+      content: `Seguro que desea ${
+        record.STATE === 'A' ? 'inhabilitar' : 'habilitar'
+      } esta persona?`,
+      onOk: async () => {
+        try {
+          const { message } = await updatePerson({
+            PERSON_ID: record.PERSON_ID,
+            STATE: record.STATE === 'A' ? 'I' : 'A',
+          })
+
+          successNotification({
+            message: message || 'Operacion exitosa',
+            description: 'El estado de la persona fue actualizado exitosamente.',
+          })
+
+          handleSearch()
+        } catch (error) {
+          errorHandler(error)
+        }
+      },
+    })
+  }
+
   const columns: ColumnsType<unknown> = [
     {
       dataIndex: 'PERSON_ID',
       key: 'PERSON_ID',
-      title: 'Código',
+      title: 'Codigo',
       align: 'center',
     },
     {
@@ -88,13 +121,13 @@ const Page: React.FC = () => {
     {
       dataIndex: 'IDENTITY_DOCUMENT',
       key: 'IDENTITY_DOCUMENT',
-      title: 'Cédula',
+      title: 'Cedula',
       render: (value) => formatter({ value, format: 'document' }),
     },
     {
       dataIndex: 'PHONE',
       key: 'PHONE',
-      title: 'Teléfono',
+      title: 'Telefono',
       render: (value) => formatter({ value, format: 'phone' }),
     },
     {
@@ -111,7 +144,7 @@ const Page: React.FC = () => {
   ]
 
   const columnsMap: Partial<Record<keyof Person, ColumnMapValue<Person>>> = {
-    PERSON_ID: 'Código',
+    PERSON_ID: 'Codigo',
     NAME: 'Nombre',
     LAST_NAME: 'Apellido',
     IDENTITY_DOCUMENT: {
@@ -119,7 +152,7 @@ const Page: React.FC = () => {
       render: (value: string) => formatter({ value, format: 'document' }),
     },
     PHONE: {
-      header: 'Teléfono',
+      header: 'Telefono',
       render: (value: string) => formatter({ value, format: 'phone' }),
     },
     EMAIL: 'Correo',
@@ -170,7 +203,7 @@ const Page: React.FC = () => {
       filter={filter}
       form={form}
       initialFilter={initialFilter}
-      loading={isGetPeoplePending}
+      loading={isGetPeoplePending || isUpdatePending}
       metadata={metadata}
       onChange={handleSearch}
       onSearch={setSearchKey}
@@ -178,6 +211,7 @@ const Page: React.FC = () => {
       searchPlaceholder={'Buscar personas...'}
       onCreate={() => navigate(location.pathname + '/create')}
       onEdit={handleEdit}
+      onUpdate={handleToggleState}
     />
   )
 }

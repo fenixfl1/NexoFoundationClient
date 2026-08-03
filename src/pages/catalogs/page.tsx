@@ -71,11 +71,19 @@ const Page: React.FC = () => {
 
       const filter = getConditionFromForm(FILTER)
 
-      const condition: AdvancedCondition<Catalog>[] = [...filter]
+      const condition: AdvancedCondition[] = [...filter]
+
+      if (debounce) {
+        condition.push({
+          value: debounce,
+          field: 'FILTER',
+          operator: 'LIKE',
+        })
+      }
 
       getCatalog({ page, size, condition })
     },
-    [debounce, catalogModalState]
+    [catalogModalState, debounce, form, getCatalog, metadata.currentPage, metadata.pageSize]
   )
 
   useEffect(handleSearch, [handleSearch])

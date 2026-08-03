@@ -2,15 +2,15 @@ import { SwapOutlined } from '@ant-design/icons'
 import { FormInstance } from 'antd'
 import React, { useEffect } from 'react'
 import { formItemLayout } from 'src/config/breakpoints'
+import { getSessionInfo } from 'src/lib/session'
 import CustomButton from './custom/CustomButton'
 import CustomCol from './custom/CustomCol'
-import CustomFormItem from './custom/CustomFormItem'
 import CustomForm from './custom/CustomForm'
+import CustomFormItem from './custom/CustomFormItem'
 import CustomModal from './custom/CustomModal'
 import CustomPasswordInput from './custom/CustomPasswordInput'
 import CustomRow from './custom/CustomRow'
 import CustomSpin from './custom/CustomSpin'
-import { getSessionInfo } from 'src/lib/session'
 
 interface ChangePasswordFormProps {
   open: boolean
@@ -18,6 +18,10 @@ interface ChangePasswordFormProps {
   onFinish: () => void
   loading?: boolean
   form: FormInstance
+  requireCurrentPassword?: boolean
+  title?: string
+  submitLabel?: string
+  username?: string
 }
 
 const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({
@@ -26,36 +30,44 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({
   onClose,
   onFinish,
   open,
+  requireCurrentPassword = true,
+  title = 'Cambiar contraseña',
+  submitLabel = 'Cambiar contraseña',
+  username,
 }) => {
   useEffect(() => {
-    form.setFieldsValue({ USERNAME: getSessionInfo().username })
-  }, [])
+    if (!open) return
+
+    form.setFieldsValue({
+      USERNAME: username ?? getSessionInfo().username,
+      OLD_PASSWORD: undefined,
+      NEW_PASSWORD: undefined,
+      CONFIRM_PASSWORD: undefined,
+    })
+  }, [form, open, username])
 
   return (
-    <CustomModal
-      title={'Cambiar Contraseña'}
-      open={open}
-      onCancel={onClose}
-      footer={null}
-    >
+    <CustomModal title={title} open={open} onCancel={onClose} footer={null}>
       <CustomSpin spinning={loading}>
         <CustomForm layout={'vertical'} form={form} {...formItemLayout}>
           <CustomRow justify={'end'}>
             <CustomFormItem hidden noStyle name={'USERNAME'} />
-            <CustomCol span={24}>
-              <CustomFormItem
-                label="Contraseña actual"
-                name="OLD_PASSWORD"
-                rules={[{ required: true }]}
-              >
-                <CustomPasswordInput placeholder={'Contraseña actual'} />
-              </CustomFormItem>
-            </CustomCol>
+            {requireCurrentPassword ? (
+              <CustomCol span={24}>
+                <CustomFormItem
+                  label="Contraseña actual"
+                  name="OLD_PASSWORD"
+                  rules={[{ required: true }]}
+                >
+                  <CustomPasswordInput placeholder={'Contraseña actual'} />
+                </CustomFormItem>
+              </CustomCol>
+            ) : null}
             <CustomCol xs={24}>
               <CustomFormItem
                 label={'Nueva contraseña'}
                 name={'NEW_PASSWORD'}
-                rules={[{ required: true }]}
+                rules={[{ required: true }, { min: 6 }]}
               >
                 <CustomPasswordInput placeholder={'Nueva contraseña'} />
               </CustomFormItem>
@@ -75,7 +87,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({
                       }
                       return Promise.reject(
                         new Error(
-                          '¡La nueva contraseña que ingresaste no coincide!'
+                          'La nueva contraseña que ingresaste no coincide.'
                         )
                       )
                     },
@@ -92,7 +104,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({
                 type="primary"
                 onClick={onFinish}
               >
-                Cambiar contraseña
+                {submitLabel}
               </CustomButton>
             </CustomFormItem>
           </CustomRow>

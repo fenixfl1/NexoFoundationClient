@@ -87,6 +87,7 @@ const ScholarshipForm: React.FC<ScholarshipFormProps> = ({
 
   const fetchStudents = useCallback(() => {
     if (!open) return
+
     const condition: AdvancedCondition[] = [
       { field: 'STATE', operator: '=', value: 'A' },
     ]
@@ -119,13 +120,13 @@ const ScholarshipForm: React.FC<ScholarshipFormProps> = ({
           SCHOLARSHIP_ID: scholarship.SCHOLARSHIP_ID,
         } as Scholarship)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Beca actualizada correctamente.',
         })
       } else {
         await createScholarship(payload)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Beca registrada correctamente.',
         })
       }
@@ -179,11 +180,11 @@ const ScholarshipForm: React.FC<ScholarshipFormProps> = ({
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Descripción'}
+                label={'Descripcion'}
                 name={'DESCRIPTION'}
                 {...labelColFullWidth}
               >
-                <CustomTextArea rows={2} placeholder={'Descripción'} />
+                <CustomTextArea rows={2} placeholder={'Descripcion'} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol {...defaultBreakpoints}>

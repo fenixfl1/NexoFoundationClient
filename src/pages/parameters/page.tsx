@@ -62,10 +62,10 @@ const ParameterPage: React.FC = () => {
 
   const handleToggleState = async (record: Parameter) => {
     confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
+      title: 'Confirmacion',
+      content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
-      } el parámetro "${record.PARAMETER}"?`,
+      } el parametro "${record.PARAMETER}"?`,
       onOk: async () => {
         try {
           await updateParameter({
@@ -87,12 +87,12 @@ const ParameterPage: React.FC = () => {
       {
         dataIndex: 'PARAMETER',
         key: 'PARAMETER',
-        title: 'Parámetro',
+        title: 'Parametro',
       },
       {
         dataIndex: 'DESCRIPTION',
         key: 'DESCRIPTION',
-        title: 'Descripción',
+        title: 'Descripcion',
       },
       {
         dataIndex: 'VALUE',
@@ -102,7 +102,7 @@ const ParameterPage: React.FC = () => {
       {
         dataIndex: 'MENU_OPTION_NAME',
         key: 'MENU_OPTION_NAME',
-        title: 'Opción de menú',
+        title: 'Opcion de menu',
       },
     ],
     []
@@ -125,15 +125,15 @@ const ParameterPage: React.FC = () => {
   return (
     <>
       <SmartTable
-      exportable
+        exportable
         form={form}
         rowKey="PARAMETER_ID"
         loading={isPending || isUpdatePending}
         columns={columns}
         dataSource={parameters}
         metadata={metadata}
-        createText={'Nuevo parámetro'}
-        searchPlaceholder={'Buscar parámetros...'}
+        createText={'Nuevo parametro'}
+        searchPlaceholder={'Buscar parametros...'}
         onCreate={() => {
           setEditing(undefined)
           setModalOpen(true)

@@ -1,9 +1,13 @@
 export const notificationChannelOptions = [
-  { value: 'email', label: 'Correo electrónico' },
-  { value: 'sms', label: 'SMS' },
-  { value: 'in_app', label: 'In App' },
-  { value: 'push', label: 'Push' },
-  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'email', label: 'Correo electronico' },
+  { value: 'sms', label: 'SMS', disabled: true },
+  { value: 'in_app', label: 'In App', disabled: true },
+  { value: 'push', label: 'Push', disabled: true },
+  { value: 'whatsapp', label: 'WhatsApp', disabled: true },
+]
+
+export const notificationTemplateChannelOptions = [
+  { value: 'email', label: 'Correo electronico institucional' },
 ]
 
 export const notificationStatusOptions = [

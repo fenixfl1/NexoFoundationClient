@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Form } from 'antd'
 import type { UploadFile } from 'antd/lib/upload/interface'
 import CustomModal from 'src/components/custom/CustomModal'
@@ -257,13 +257,13 @@ const StudentDocumentForm: React.FC<StudentDocumentFormProps> = ({
           DOCUMENT_ID: documentDetail.DOCUMENT_ID,
         } as StudentDocument)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Documento actualizado correctamente.',
         })
       } else {
         await createDocument(payload)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Documento registrado correctamente.',
         })
       }
@@ -333,13 +333,13 @@ const StudentDocumentForm: React.FC<StudentDocumentFormProps> = ({
             </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Descripción'}
+                label={'Descripcion'}
                 name={'DESCRIPTION'}
                 {...labelColFullWidth}
               >
                 <CustomTextArea
                   rows={2}
-                  placeholder={'Descripción del documento'}
+                  placeholder={'Descripcion del documento'}
                 />
               </CustomFormItem>
             </CustomCol>
@@ -433,3 +433,4 @@ const StudentDocumentForm: React.FC<StudentDocumentFormProps> = ({
 }
 
 export default StudentDocumentForm
+

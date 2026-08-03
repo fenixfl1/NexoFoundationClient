@@ -3,9 +3,9 @@ import { useCustomMutation } from 'src/hooks/use-custom-mutation'
 import { putRequest } from '../api'
 
 interface ChangePasswordPayload {
+  USERNAME: string
   OLD_PASSWORD: string
   NEW_PASSWORD: string
-  USER_ID: string
 }
 
 export function useChangePasswordMutation() {

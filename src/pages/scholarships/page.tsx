@@ -98,8 +98,8 @@ const ScholarshipsSection: React.FC = () => {
 
   const handleToggleState = (record: Scholarship) => {
     confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
+      title: 'Confirmacion',
+      content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
       } la beca?`,
       onOk: async () => {
@@ -177,7 +177,7 @@ const ScholarshipsSection: React.FC = () => {
         key: 'END_DATE',
         title: 'Fin',
         render: (value) =>
-          value ? formatter({ value, format: 'date' }) : '—',
+          value ? formatter({ value, format: 'date' }) : '-',
       },
     ],
     []
@@ -226,7 +226,7 @@ const ScholarshipsSection: React.FC = () => {
       <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
       <CustomDivider />
       <SmartTable
-      exportable
+        exportable
         form={form}
         rowKey="SCHOLARSHIP_ID"
         loading={isPending || isUpdatePending}
@@ -306,8 +306,8 @@ const DisbursementsSection: React.FC = () => {
 
   const handleToggleState = (record: Disbursement) => {
     confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
+      title: 'Confirmacion',
+      content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
       } el desembolso?`,
       onOk: async () => {
@@ -378,7 +378,7 @@ const DisbursementsSection: React.FC = () => {
         dataIndex: 'REFERENCE',
         key: 'REFERENCE',
         title: 'Referencia',
-        render: (value) => value || '—',
+        render: (value) => value || '-',
       },
     ],
     []
@@ -427,7 +427,7 @@ const DisbursementsSection: React.FC = () => {
       <ModuleSummary total={metadata.totalRows} dataSource={summaryData} />
       <CustomDivider />
       <SmartTable
-      exportable
+        exportable
         form={form}
         rowKey="DISBURSEMENT_ID"
         loading={isPending || isUpdatePending}
@@ -506,8 +506,8 @@ const ScholarshipCostsSection: React.FC = () => {
 
   const handleToggleState = (record: ScholarshipCost) => {
     confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
+      title: 'Confirmacion',
+      content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
       } el costo del periodo?`,
       onOk: async () => {
@@ -637,7 +637,7 @@ const ScholarshipCostsSection: React.FC = () => {
   return (
     <>
       <SmartTable
-      exportable
+        exportable
         form={form}
         rowKey="COST_ID"
         loading={isPending || isUpdatePending}

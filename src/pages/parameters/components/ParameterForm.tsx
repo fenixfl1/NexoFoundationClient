@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 import { Form } from 'antd'
+import CustomAlert from 'src/components/custom/CustomAlert'
 import CustomModal from 'src/components/custom/CustomModal'
 import CustomForm from 'src/components/custom/CustomForm'
 import CustomFormItem from 'src/components/custom/CustomFormItem'
@@ -20,6 +21,7 @@ import { useGetMenuOptionsWithPermissions } from 'src/services/menu-options/useG
 import { AdvancedCondition } from 'src/types/general'
 import CustomTreeSelect from 'src/components/custom/CustomTreeSelect'
 import CustomSelect from 'src/components/custom/CustomSelect'
+import { OptionWithPermission } from 'src/services/menu-options/menu-options.types'
 
 interface ParameterFormProps {
   open?: boolean
@@ -61,19 +63,17 @@ const ParameterForm: React.FC<ParameterFormProps> = ({
   }, [open, handleGetMenuOptions])
 
   const menuOptionsList = useMemo(() => {
-    if (!menuOptionsWithPermissions?.length) return []
+    const build = (items: OptionWithPermission[]) =>
+      items.map((item) => ({
+        title: `${item.MENU_OPTION_ID} - ${item.NAME}`,
+        value: item.MENU_OPTION_ID,
+        key: item.MENU_OPTION_ID,
+        children: item.CHILDREN?.length
+          ? build(item.CHILDREN as OptionWithPermission[])
+          : [],
+      }))
 
-    return menuOptionsWithPermissions.map((item) => ({
-      title: item.NAME,
-      value: item.MENU_OPTION_ID,
-      key: item.MENU_OPTION_ID,
-      children:
-        item?.CHILDREN?.map((child) => ({
-          title: child.NAME,
-          value: child.MENU_OPTION_ID,
-          key: child.MENU_OPTION_ID,
-        })) ?? [],
-    }))
+    return build(menuOptionsWithPermissions as OptionWithPermission[])
   }, [menuOptionsWithPermissions])
 
   useEffect(() => {
@@ -85,7 +85,7 @@ const ParameterForm: React.FC<ParameterFormProps> = ({
       form.resetFields()
       form.setFieldValue('STATE', 'A')
     }
-  }, [parameter, open])
+  }, [form, parameter, open])
 
   const handleFinish = async () => {
     try {
@@ -97,14 +97,14 @@ const ParameterForm: React.FC<ParameterFormProps> = ({
           PARAMETER_ID: parameter.PARAMETER_ID,
         })
         notify({
-          message: 'Operación exitosa',
-          description: 'Parámetro actualizado correctamente.',
+          message: 'Operacion exitosa',
+          description: 'Parametro actualizado correctamente.',
         })
       } else {
         await createParameter(data)
         notify({
-          message: 'Operación exitosa',
-          description: 'Parámetro creado correctamente.',
+          message: 'Operacion exitosa',
+          description: 'Parametro creado correctamente.',
         })
       }
 
@@ -122,23 +122,34 @@ const ParameterForm: React.FC<ParameterFormProps> = ({
       onCancel={onClose}
       onOk={handleFinish}
       width={'40%'}
-      title={parameter ? 'Editar parámetro' : 'Registrar nuevo parámetro'}
+      title={parameter ? 'Editar parametro' : 'Registrar nuevo parametro'}
     >
       <CustomSpin
         spinning={isCreatePending || isUpdatePending || isOptionsPending}
       >
+        <CustomAlert
+          type="info"
+          showIcon
+          message={
+            'Un parametro guarda configuraciones que luego usa un modulo del sistema. La clave suele ser tecnica y sin espacios, mientras que el valor puede ser texto, ids, listas separadas por comas o incluso JSON, segun lo que necesite esa pantalla.'
+          }
+          style={{ marginBottom: 16 }}
+        />
+
         <CustomDivider />
         <CustomForm form={form} {...formItemLayout}>
           <CustomRow gutter={[16, 8]}>
             <CustomCol xs={24}>
               <CustomFormItem
-                label={'Opción de menú'}
+                label={'Opcion de menu'}
                 name={'MENU_OPTION_ID'}
+                tooltip="Modulo o pantalla a la que pertenecera este parametro."
+                extra="Puedes elegir cualquier nivel del arbol."
                 rules={[{ required: true }]}
               >
                 <CustomTreeSelect
                   treeData={menuOptionsList}
-                  placeholder={'Seleccionar opción'}
+                  placeholder={'Seleccionar opcion'}
                   treeDefaultExpandAll
                   showSearch
                 />
@@ -147,8 +158,10 @@ const ParameterForm: React.FC<ParameterFormProps> = ({
             <CustomCol xs={24}>
               <CustomFormItem
                 uppercase
-                label={'Parámetro'}
+                label={'Parametro'}
                 name={'PARAMETER'}
+                tooltip="Clave interna que usa el sistema para leer este valor."
+                extra="Recomendado: mayusculas, sin espacios y con guiones bajos. Ejemplo: ID_LIST_STATES"
                 rules={[{ required: true }]}
                 noSpaces
               >
@@ -156,21 +169,31 @@ const ParameterForm: React.FC<ParameterFormProps> = ({
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
-              <CustomFormItem label={'Descripción'} name={'DESCRIPTION'}>
-                <CustomInput placeholder={'Descripción del parámetro'} />
+              <CustomFormItem
+                label={'Descripcion'}
+                name={'DESCRIPTION'}
+                tooltip="Explica para que sirve este parametro."
+                extra="Esto ayuda bastante cuando luego haya que editarlo o revisarlo."
+              >
+                <CustomInput placeholder={'Descripcion del parametro'} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
-              <CustomFormItem label={'Valor'} name={'VALUE'}>
-                <CustomTextArea
-                  rows={1}
-                  placeholder={'Valor'}
-                  showCount={false}
-                />
+              <CustomFormItem
+                label={'Valor'}
+                name={'VALUE'}
+                tooltip="Contenido que consumira el modulo."
+                extra="Puedes guardar un texto simple, una lista de ids o una estructura JSON si ese modulo lo requiere."
+              >
+                <CustomTextArea rows={3} placeholder={'Valor'} showCount={false} />
               </CustomFormItem>
             </CustomCol>
             <CustomCol xs={24}>
-              <CustomFormItem label={'Estado'} name={'STATE'}>
+              <CustomFormItem
+                label={'Estado'}
+                name={'STATE'}
+                tooltip="Define si el parametro sigue disponible para usarse."
+              >
                 <CustomSelect
                   placeholder={'Seleccionar estado'}
                   options={[

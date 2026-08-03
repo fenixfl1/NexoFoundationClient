@@ -28,6 +28,8 @@ export interface Person {
 }
 
 export interface Reference {
+  REFERENCE_ID?: number
+  PERSON_ID?: number
   RELATIONSHIP: string
   PHONE: string
   EMAIL: string

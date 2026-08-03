@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import dayjs, { Dayjs } from 'dayjs'
 import styled from 'styled-components'
 import CustomAlert from 'src/components/custom/CustomAlert'
@@ -317,7 +317,7 @@ const Page: React.FC = () => {
                                   ) : null}
                                   {appointment.UNIVERSITY ? (
                                     <CustomText type="secondary">
-                                      Institucion: {appointment.UNIVERSITY}
+                                      Universidad: {appointment.UNIVERSITY}
                                     </CustomText>
                                   ) : null}
                                   {appointment.NOTES ? (
@@ -392,3 +392,4 @@ const ConditionalRender: React.FC<
 }
 
 export default Page
+

@@ -82,7 +82,7 @@ const ScholarshipCostForm: React.FC<ScholarshipCostFormProps> = ({
     () =>
       scholarships.map((item) => ({
         value: item.SCHOLARSHIP_ID,
-        label: `${item.NAME} · ${item.STUDENT_NAME ?? ''} ${
+        label: `${item.NAME} - ${item.STUDENT_NAME ?? ''} ${
           item.STUDENT_LAST_NAME ?? ''
         }`,
       })),
@@ -91,6 +91,7 @@ const ScholarshipCostForm: React.FC<ScholarshipCostFormProps> = ({
 
   const fetchScholarships = useCallback(() => {
     if (!open) return
+
     const condition: AdvancedCondition[] = [
       { field: 'STATE', operator: '=', value: 'A' },
     ]
@@ -123,13 +124,13 @@ const ScholarshipCostForm: React.FC<ScholarshipCostFormProps> = ({
           COST_ID: cost.COST_ID,
         } as ScholarshipCost)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Costo actualizado correctamente.',
         })
       } else {
         await createCost(payload)
         notify({
-          message: 'Operación exitosa',
+          message: 'Operacion exitosa',
           description: 'Costo registrado correctamente.',
         })
       }

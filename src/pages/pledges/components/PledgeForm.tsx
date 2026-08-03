@@ -150,7 +150,7 @@ const PledgeForm: React.FC<PledgeFormProps> = ({
       >
         <CustomDivider />
         <CustomForm form={form} {...formItemLayout}>
-          <CustomRow>
+          <CustomRow justify={'start'}>
             <CustomCol {...defaultBreakpoints}>
               <CustomFormItem
                 label={'Patrocinador'}
@@ -222,9 +222,11 @@ const PledgeForm: React.FC<PledgeFormProps> = ({
               </CustomFormItem>
             </CustomCol>
 
-            <CustomFormItem hidden label={'Estado'} name={'STATUS'}>
-              <CustomSelect options={pledgeStatusOptions} />
-            </CustomFormItem>
+            <CustomCol {...defaultBreakpoints}>
+              <CustomFormItem label={'Estado'} name={'STATUS'}>
+                <CustomSelect options={pledgeStatusOptions} />
+              </CustomFormItem>
+            </CustomCol>
             <CustomCol xs={24}>
               <CustomFormItem
                 label={'Notas'}

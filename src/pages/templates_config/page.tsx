@@ -29,6 +29,7 @@ import NotificationForm from './components/NotificationForm'
 import NotificationDetail from './components/NotificationDetail'
 import {
   notificationChannelOptions,
+  notificationTemplateChannelOptions,
   notificationStatusOptions,
 } from './constants'
 import ModuleSummary from 'src/components/ModuleSummary'
@@ -88,8 +89,8 @@ const TemplatesSection: React.FC = () => {
 
   const handleToggleState = (record: NotificationTemplate) => {
     confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
+      title: 'Confirmacion',
+      content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
       } la plantilla "${record.NAME}"?`,
       onOk: async () => {
@@ -137,7 +138,7 @@ const TemplatesSection: React.FC = () => {
       {
         dataIndex: 'MENU_OPTION_NAME',
         key: 'MENU_OPTION_NAME',
-        title: 'Opción de menú',
+        title: 'Opcion de menu',
       },
       {
         dataIndex: 'SUBJECT',
@@ -168,7 +169,7 @@ const TemplatesSection: React.FC = () => {
           <CustomSelect
             placeholder="Seleccionar canal"
             allowClear
-            options={notificationChannelOptions}
+            options={notificationTemplateChannelOptions}
           />
         </CustomFormItem>
       </CustomCol>
@@ -178,7 +179,7 @@ const TemplatesSection: React.FC = () => {
   return (
     <>
       <SmartTable
-      exportable
+        exportable
         form={form}
         rowKey="TEMPLATE_ID"
         loading={isPending || isUpdatePending}
@@ -261,10 +262,10 @@ const NotificationsSection: React.FC = () => {
 
   const handleToggleState = (record: NotificationItem) => {
     confirmModal({
-      title: 'Confirmación',
-      content: `¿Deseas ${
+      title: 'Confirmacion',
+      content: `Deseas ${
         record.STATE === 'A' ? 'desactivar' : 'activar'
-      } la notificación para "${record.RECIPIENT}"?`,
+      } la notificacion para "${record.RECIPIENT}"?`,
       onOk: async () => {
         try {
           await updateNotification({
@@ -358,7 +359,9 @@ const NotificationsSection: React.FC = () => {
         render: (value: string) =>
           value ? (
             <CustomTooltip title={value}>
-              <CustomText type="danger">Ver error</CustomText>
+              <CustomText type="danger">
+                {value.length > 70 ? `${value.slice(0, 70)}...` : value}
+              </CustomText>
             </CustomTooltip>
           ) : (
             'Sin errores'
@@ -391,7 +394,7 @@ const NotificationsSection: React.FC = () => {
       </CustomCol>
       <CustomCol xs={24}>
         <CustomFormItem
-          label={'Estado del envío'}
+          label={'Estado del envio'}
           name={['FILTER', 'STATUS__IN']}
           labelCol={{ span: 24 }}
         >
@@ -432,7 +435,7 @@ const NotificationsSection: React.FC = () => {
       />
       <CustomDivider />
       <SmartTable
-      exportable
+        exportable
         form={form}
         extra={extraAction}
         rowKey="NOTIFICATION_ID"
@@ -440,7 +443,7 @@ const NotificationsSection: React.FC = () => {
         columns={columns}
         dataSource={notifications}
         metadata={metadata}
-        createText={'Registrar notificación'}
+        createText={'Registrar notificacion'}
         searchPlaceholder={'Buscar notificaciones...'}
         onCreate={() => {
           setEditing(undefined)
@@ -470,6 +473,7 @@ const NotificationsSection: React.FC = () => {
       </ConditionalComponent>
 
       <NotificationDetail
+        key={detailId ?? 'notification-detail'}
         open={detailOpen}
         notificationId={detailId}
         onClose={() => {
@@ -488,10 +492,12 @@ const TemplatesConfigPage: React.FC = () => {
 
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab) {
+    if (tab && ['templates', 'notifications'].includes(tab)) {
       setActiveKey(tab)
+    } else {
+      setActiveKey('templates')
     }
-  }, [])
+  }, [searchParams])
 
   const handleChangeTab = (key: string) => {
     setSearchParams({ tab: key })

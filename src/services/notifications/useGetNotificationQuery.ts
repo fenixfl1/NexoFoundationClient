@@ -10,6 +10,7 @@ export function useGetNotificationQuery(
   return useQuery({
     queryKey: ['notifications', 'get-one', notificationId],
     enabled: Boolean(notificationId && enabled),
+    refetchOnMount: 'always',
     queryFn: async () => {
       const {
         data: { data },

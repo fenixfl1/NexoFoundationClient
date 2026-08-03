@@ -28,6 +28,7 @@ const OptionDetail: React.FC<OptionDetailProps> = ({
   onChange,
 }) => {
   const permissions = selectedOption?.PERMISSIONS || []
+  const optionPath = selectedOption?.PATH?.trim()
 
   return (
     <CustomCol xs={24}>
@@ -42,7 +43,7 @@ const OptionDetail: React.FC<OptionDetailProps> = ({
               <Empty
                 description={
                   <CustomText type="secondary">
-                    Selecciona una opción para ver el detalle.
+                    Selecciona una opcion para ver el detalle.
                   </CustomText>
                 }
               />
@@ -71,7 +72,7 @@ const OptionDetail: React.FC<OptionDetailProps> = ({
                 },
                 {
                   key: 'created_at',
-                  label: 'Creación',
+                  label: 'Creacion',
                   children: formatter({
                     value: selectedOption?.['CREATED_AT'],
                     format: 'datetime',
@@ -86,20 +87,22 @@ const OptionDetail: React.FC<OptionDetailProps> = ({
                 {
                   span: 2,
                   key: 'description',
-                  label: 'Descripción',
+                  label: 'Descripcion',
                   children: (
                     <CustomParagraph style={{ marginBottom: 0 }}>
-                      {selectedOption?.DESCRIPTION || '—'}
+                      {selectedOption?.DESCRIPTION || '-'}
                     </CustomParagraph>
                   ),
                 },
                 {
                   key: 'path',
                   label: 'Ruta',
-                  children: (
-                    <Link to={'/admin' + selectedOption?.PATH} target="_blank">
-                      {selectedOption?.PATH}
+                  children: optionPath ? (
+                    <Link to={`/admin${optionPath}`} target="_blank">
+                      {optionPath}
                     </Link>
+                  ) : (
+                    <CustomText type="secondary">No definida</CustomText>
                   ),
                 },
                 {

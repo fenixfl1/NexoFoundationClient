@@ -81,7 +81,7 @@ const renderCellValue = (
   value: unknown,
   catalogMaps: CatalogMaps = {}
 ) => {
-  if (value === null || value === undefined || value === '') return '—'
+  if (value === null || value === undefined || value === '') return '-'
 
   const catalogLabel = column.catalog
     ? catalogMaps[column.catalog]?.[String(value)]
@@ -123,7 +123,7 @@ const renderCellValue = (
   }
 
   if (typeof value === 'boolean') {
-    return value ? 'Sí' : 'No'
+    return value ? 'Si' : 'No'
   }
 
   if (typeof value === 'object') {
@@ -263,6 +263,7 @@ const ReportsPage: React.FC = () => {
       setExportInitialValues({
         format: 'xlsx',
         title: result.report?.NAME || 'Reporte',
+        reportType: result.report?.NAME || 'Reporte',
         filename: `${result.fileName || selectedReportKey.toLowerCase()}.xlsx`,
       })
       setExportModalOpen(true)
@@ -397,7 +398,7 @@ const ReportsPage: React.FC = () => {
                 {selectedReport?.NAME ?? 'Reportes'}
               </CustomTitle>
               <CustomText type="secondary">
-                {selectedReport?.MODULE ? `${selectedReport.MODULE} · ` : ''}
+                {selectedReport?.MODULE ? `${selectedReport.MODULE} - ` : ''}
                 {selectedReport?.DESCRIPTION ||
                   'Selecciona un reporte para iniciar.'}
               </CustomText>

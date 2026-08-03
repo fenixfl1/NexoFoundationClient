@@ -363,7 +363,7 @@ const Home: React.FC = () => {
             pathMatch: 'requests',
           },
           {
-            label: 'Validación de requisitos',
+            label: 'Validacion de requisitos',
             value: metrics.requirementsPending ?? 0,
             pathMatch: 'requirements_validation',
           },
@@ -387,6 +387,14 @@ const Home: React.FC = () => {
       })
   }, [flatOptions, isStudent, metrics])
 
+  const primaryActionPath =
+    pendingOptions[0]?.menu?.PATH ??
+    recentOptions[0]?.PATH ??
+    flatOptions.find((option) => option.PATH?.includes('requests'))?.PATH
+
+  const primaryActionLabel =
+    pendingOptions[0]?.menu?.NAME ?? recentOptions[0]?.NAME ?? 'tablero'
+
   const handleNavigate = (path?: string) => {
     if (!path) return
     const basePath = isStudent ? '/student' : '/admin'
@@ -403,29 +411,29 @@ const Home: React.FC = () => {
         {
           label: 'Citas programadas',
           value: String(metrics.appointmentsUpcoming ?? 0),
-          caption: 'Próxima esta semana',
+          caption: 'Proxima esta semana',
         },
         {
           label: 'Solicitudes activas',
           value: String(metrics.requestsActive ?? 0),
-          caption: 'En revisión',
+          caption: 'En revision',
         },
         {
           label: 'Promedio actual',
-          value: metrics.academicAverage?.toString() ?? '—',
-          caption: 'Último semestre',
+          value: metrics.academicAverage?.toString() ?? '-',
+          caption: 'Ultimo semestre',
         },
       ]
     : [
         {
           label: 'Solicitudes nuevas',
           value: String(metrics.requestsPending ?? 0),
-          caption: 'Últimas 24 horas',
+          caption: 'Ultimas 24 horas',
         },
         {
           label: 'Validaciones pendientes',
           value: String(metrics.requirementsPending ?? 0),
-          caption: 'Requieren revisión',
+          caption: 'Requieren revision',
         },
         {
           label: 'Becas activas',
@@ -447,7 +455,7 @@ const Home: React.FC = () => {
             <CustomAvatar size={68} src={getAvatarLink()} />
           </AvatarRing>
           <div>
-            <Eyebrow>Resumen del día</Eyebrow>
+            <Eyebrow>Resumen del dia</Eyebrow>
             <CustomTitle level={2}>Hola, {name || 'Bienvenido'}</CustomTitle>
             <RolePill>{isStudent ? 'Estudiante' : 'Administrador'}</RolePill>
           </div>
@@ -455,7 +463,7 @@ const Home: React.FC = () => {
         <CustomDivider style={{ marginRight: 50 }} />
       </Hero>
 
-      <SectionTitle>Indicadores rápidos</SectionTitle>
+      <SectionTitle>Indicadores rapidos</SectionTitle>
       <CardsGrid>
         {highlights.map((item, index) => (
           <StatCard
@@ -472,22 +480,28 @@ const Home: React.FC = () => {
       <WideGrid>
         <Panel>
           <PanelHeader>
-            <CustomText strong>Elementos que requieren atención</CustomText>
+            <CustomText strong>Elementos que requieren atencion</CustomText>
             <Tag>Semana actual</Tag>
           </PanelHeader>
           <AttentionRow>
-            <AttentionBadge>✓</AttentionBadge>
+            <AttentionBadge>OK</AttentionBadge>
             <div>
-              <CustomText strong>Todo al día</CustomText>
+              <CustomText strong>Todo al dia</CustomText>
               <CustomParagraph>
-                No tienes tareas críticas pendientes. Mantén este ritmo.
+                No tienes tareas criticas pendientes. Manten este ritmo.
               </CustomParagraph>
             </div>
           </AttentionRow>
           <DividerLine />
           <ActionRow>
-            <CustomText>Ver detalles</CustomText>
-            <CustomButton type="link">Ir al tablero</CustomButton>
+            <CustomText>Ver detalles en {primaryActionLabel}</CustomText>
+            <CustomButton
+              type="link"
+              disabled={!primaryActionPath}
+              onClick={() => handleNavigate(primaryActionPath)}
+            >
+              Ir al tablero
+            </CustomButton>
           </ActionRow>
         </Panel>
 
@@ -496,7 +510,7 @@ const Home: React.FC = () => {
             <CustomRow justify={'end'}>
               <CustomCol xs={24}>
                 <CustomText style={{ whiteSpace: 'nowrap' }} strong>
-                  Accesos rápidos
+                  Accesos rapidos
                 </CustomText>
               </CustomCol>
               <CustomSegmented
@@ -522,7 +536,7 @@ const Home: React.FC = () => {
               ) : (
                 <QuickItem>
                   <span>No hay accesos recientes</span>
-                  <SmallMuted>Visita módulos para verlos aquí.</SmallMuted>
+                  <SmallMuted>Visita modulos para verlos aqui.</SmallMuted>
                 </QuickItem>
               ))}
 
@@ -541,7 +555,7 @@ const Home: React.FC = () => {
               ) : (
                 <QuickItem>
                   <span>Sin pendientes</span>
-                  <SmallMuted>Todo al día.</SmallMuted>
+                  <SmallMuted>Todo al dia.</SmallMuted>
                 </QuickItem>
               ))}
           </QuickList>
@@ -557,7 +571,7 @@ const Home: React.FC = () => {
               <div>
                 <CustomText strong>{item.title}</CustomText>
                 <SmallMuted>
-                  {formatter({ value: item.occurred_at, format: 'datetime' })} ·{' '}
+                  {formatter({ value: item.occurred_at, format: 'datetime' })} -{' '}
                   {item.description}
                 </SmallMuted>
               </div>
@@ -568,7 +582,7 @@ const Home: React.FC = () => {
             <Dot />
             <div>
               <CustomText strong>Sin actividad reciente</CustomText>
-              <SmallMuted>Las acciones aparecerán aquí.</SmallMuted>
+              <SmallMuted>Las acciones apareceran aqui.</SmallMuted>
             </div>
           </FeedItem>
         )}

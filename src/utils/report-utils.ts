@@ -32,6 +32,7 @@ export interface ExportProps<T> {
   columnsMap?: ColumnsMap<T>
   orientation?: 'portrait' | 'landscape'
   title?: string
+  reportType?: string
   businessInfo?: Business
   groupLayout?: 'horizontal' | 'vertical'
   extraHeaderHtml?: string
@@ -96,6 +97,8 @@ const joinArrayValues = (value: unknown[]): string =>
 
 const isBrowser =
   typeof window !== 'undefined' && typeof document !== 'undefined'
+
+const DEFAULT_REPORT_LOGO = '/assets/ge-logo.png'
 
 const htmlToPlainTextLines = (html?: string): string[] => {
   if (!html) return []
@@ -610,12 +613,12 @@ const resolveLogoDataUrl = async (
   }
 }
 
-// const detectPdfImageType = (dataUrl: string): 'PNG' | 'JPEG' => {
-//   if (/^data:image\/jpe?g;base64,/i.test(dataUrl)) {
-//     return 'JPEG'
-//   }
-//   return 'PNG'
-// }
+const detectPdfImageType = (dataUrl: string): 'PNG' | 'JPEG' => {
+  if (/^data:image\/jpe?g;base64,/i.test(dataUrl)) {
+    return 'JPEG'
+  }
+  return 'PNG'
+}
 
 export async function exportToPDF<T = any>({
   data = [],
@@ -624,6 +627,7 @@ export async function exportToPDF<T = any>({
   showHead = true,
   orientation = 'portrait',
   title = 'Reporte',
+  reportType,
   businessInfo,
   groupLayout = 'horizontal',
   extraHeaderHtml,
@@ -643,20 +647,48 @@ export async function exportToPDF<T = any>({
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const logoDataUrl = await resolveLogoDataUrl(info?.LOGO)
+  const logoDataUrl =
+    (await resolveLogoDataUrl(info?.LOGO)) ??
+    (await resolveLogoDataUrl(info?.LOGO_URL)) ??
+    (await resolveLogoDataUrl(DEFAULT_REPORT_LOGO))
+  let logoBottomY = 0
 
   doc.setFontSize(18)
   doc.text(title, pageWidth / 2, 20, { align: 'center' })
 
+  if (reportType) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(12)
+    doc.text(`Tipo de reporte: ${reportType}`, pageWidth / 2, 27, {
+      align: 'center',
+    })
+  }
+
   if (logoDataUrl) {
     try {
-      // doc.addImage(logoDataUrl, detectPdfImageType(logoDataUrl), 10, 10, 24, 24)
+      const imageType = detectPdfImageType(logoDataUrl)
+      const imageProps = doc.getImageProperties(logoDataUrl)
+      const maxLogoWidth = orientation === 'landscape' ? 48 : 42
+      const maxLogoHeight = 18
+      const aspectRatio =
+        imageProps.height > 0 ? imageProps.width / imageProps.height : 1
+
+      let logoWidth = maxLogoWidth
+      let logoHeight = logoWidth / aspectRatio
+
+      if (logoHeight > maxLogoHeight) {
+        logoHeight = maxLogoHeight
+        logoWidth = logoHeight * aspectRatio
+      }
+
+      doc.addImage(logoDataUrl, imageType, 10, 10, logoWidth, logoHeight)
+      logoBottomY = 10 + logoHeight
     } catch {
       // ignore invalid image payloads
     }
   }
 
-  let y = logoDataUrl ? 38 : 30
+  let y = logoBottomY > 0 ? Math.max(30, logoBottomY + 8) : 30
   if (info?.NAME) {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(14)
@@ -709,6 +741,7 @@ export async function exportToPDF<T = any>({
       container.style.width = '800px'
       const rendered = Mustache.render(extraHeaderHtml, {
         title: title ?? 'Reporte',
+        reportType: reportType ?? '',
         date: moment().format('DD/MM/YYYY'),
         time: moment().format('h:mm:ss A'),
         data: { ...(session ?? {}), ...(info ?? {}) },
