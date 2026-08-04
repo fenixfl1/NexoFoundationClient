@@ -140,6 +140,7 @@ const GeneralData: React.FC<GeneralDataProps> = ({ form }) => {
               initialValue={'1'}
             >
               <CatalogSelector
+                readonly={isEditing}
                 width={'25%'}
                 catalog={'ID_LIST_DOCUMENT_TYPE'}
               />

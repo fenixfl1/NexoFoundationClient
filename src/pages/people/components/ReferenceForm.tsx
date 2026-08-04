@@ -72,6 +72,7 @@ const ReferenceForm: React.FC<ReferenceFormProps> = ({
     >
       <CustomSpin spinning={submitting}>
         <CustomForm form={form} {...formItemLayout}>
+          <CustomFormItem hidden name={['REFERENCE', 'REFERENCE_ID']} />
           <CustomFormItem hidden name={['REFERENCE', 'PERSON_ID']} />
           <CustomRow justify={'start'}>
             <CustomCol {...defaultBreakpoints}>
