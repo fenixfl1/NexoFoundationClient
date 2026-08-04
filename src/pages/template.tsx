@@ -209,7 +209,7 @@ const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
           type: 'group',
           label: (
             <CustomText>
-              {option.ICON ? <SVGReader svg={option.ICON} /> : null}{' '}
+              {/* {option.ICON ? <SVGReader svg={option.ICON} /> : null}{' '} */}
               {option.NAME}
             </CustomText>
           ),
