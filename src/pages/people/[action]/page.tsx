@@ -97,32 +97,6 @@ const Page: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    form.setFieldsValue({
-      NAME: 'Grupo JR SRL',
-      BIRTH_DATE: dayjs('2025-12-09T04:00:00.000Z'),
-      IDENTITY_DOCUMENT: '5-66-56565-6',
-      ROLE_ID: 2,
-      CONTACTS: [
-        {
-          IS_PRIMARY: true,
-          TYPE: 'email',
-          VALUE: 'grupojrsrl@info.com',
-          USAGE: 'personal',
-        },
-        {
-          IS_PRIMARY: true,
-          TYPE: 'phone',
-          VALUE: '(829) 556-9696',
-          USAGE: 'personal',
-        },
-      ],
-      REFERENCES: [],
-      INCOMPLETE: false,
-      DOCUMENTS: [],
-    } as never)
-  }, [])
-
-  useEffect(() => {
     if (isEditing) {
       const contacts = person.CONTACTS?.reduce(
         (acc, contact) => {

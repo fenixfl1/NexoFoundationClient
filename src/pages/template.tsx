@@ -207,13 +207,13 @@ const RootTemplate: React.FC<React.PropsWithChildren> = ({ children }) => {
         return {
           key: option?.MENU_OPTION_ID,
           type: 'group',
+          children: getSubMenu(option?.CHILDREN),
           label: (
             <CustomText>
               {/* {option.ICON ? <SVGReader svg={option.ICON} /> : null}{' '} */}
               {option.NAME}
             </CustomText>
           ),
-          children: getSubMenu(option?.CHILDREN),
         }
       }
 
